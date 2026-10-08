@@ -5,3 +5,14 @@ procedural locomotion and motion matching, to physics-based, RL-driven and LLM-d
 
 Every study is a standalone interactive 3D page with live parameters, debug visualisation and a technical
 write-up. The full list, techniques and references are in [ROADMAP.md](ROADMAP.md).
+
+## Run locally
+
+```bash
+npm install
+npm run dev        # dev server
+npm run build      # typecheck + production build into dist/
+npm test           # unit tests
+```
+
+Stack: Vite multi-page app, TypeScript, Three.js, Tweakpane.
