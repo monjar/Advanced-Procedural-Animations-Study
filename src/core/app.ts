@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FixedStepLoop } from './loop';
+import { DebugDraw } from './debugDraw';
 
 export interface AppOptions {
   /** Simulation rate in Hz. */
@@ -21,6 +22,8 @@ export interface App {
   readonly camera: THREE.PerspectiveCamera;
   readonly controls: OrbitControls;
   readonly loop: FixedStepLoop;
+  /** Immediate-mode debug lines/points. Draw from `onFrame` callbacks. */
+  readonly debug: DebugDraw;
   onFixedUpdate(fn: FixedFn): void;
   onFrame(fn: FrameFn): void;
   render(): void;
@@ -78,6 +81,9 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
     scene.add(grid);
   }
 
+  const debug = new DebugDraw();
+  scene.add(debug);
+
   const fixedFns: FixedFn[] = [];
   const frameFns: FrameFn[] = [];
 
@@ -89,7 +95,9 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
         for (const fn of fixedFns) fn(dt, time);
       },
       frame: (alpha, frameDt) => {
+        debug.reset();
         for (const fn of frameFns) fn(alpha, frameDt);
+        debug.flush();
         controls.update();
         render();
       },
@@ -118,6 +126,7 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
     camera,
     controls,
     loop,
+    debug,
     onFixedUpdate: (fn) => fixedFns.push(fn),
     onFrame: (fn) => frameFns.push(fn),
     render,
