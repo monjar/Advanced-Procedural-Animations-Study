@@ -22,6 +22,8 @@ export default defineConfig({
   base: './',
   build: {
     target: 'es2022',
+    // three.js alone is ~700 kB minified; shared across demos as one cached chunk.
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       input: { main: resolve(root, 'index.html'), ...demoEntries() },
     },

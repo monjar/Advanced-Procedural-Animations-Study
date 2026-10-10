@@ -27,6 +27,8 @@ export interface App {
   onFixedUpdate(fn: FixedFn): void;
   onFrame(fn: FrameFn): void;
   render(): void;
+  /** Pixels covered by UI on the left/right; the projection is shifted so the scene centres in the free area. */
+  setInsets(left: number, right: number): void;
   start(): void;
   dispose(): void;
 }
@@ -35,7 +37,7 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   container.appendChild(renderer.domElement);
 
@@ -43,7 +45,9 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
   scene.background = new THREE.Color(options.background ?? 0x15171c);
   scene.fog = new THREE.Fog(scene.background as THREE.Color, 18, 45);
 
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
+  const BASE_FOV = 45;
+  const MIN_HFOV = THREE.MathUtils.degToRad(50);
+  const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.05, 200);
   camera.position.set(...(options.cameraPosition ?? [4, 3, 6]));
 
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -105,6 +109,8 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
     options.rate ?? 120,
   );
 
+  const insets = { left: 0, right: 0 };
+
   const resize = () => {
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -113,13 +119,20 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
     camera.aspect = w / h;
+    // Portrait screens: widen the vertical fov so the horizontal fov never drops below MIN_HFOV.
+    const fitFov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(MIN_HFOV / 2) / camera.aspect));
+    camera.fov = THREE.MathUtils.clamp(fitFov, BASE_FOV, 80);
+    // Shift the view window horizontally (film offset) by half the inset imbalance.
+    const shiftPx = (insets.left - insets.right) / 2;
+    const tanHalfFov = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+    camera.filmOffset = -(shiftPx / w) * 2 * tanHalfFov * camera.aspect * camera.getFilmWidth();
     camera.updateProjectionMatrix();
   };
   const observer = new ResizeObserver(resize);
   observer.observe(container);
   resize();
 
-  return {
+  const app: App = {
     container,
     renderer,
     scene,
@@ -130,6 +143,11 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
     onFixedUpdate: (fn) => fixedFns.push(fn),
     onFrame: (fn) => frameFns.push(fn),
     render,
+    setInsets: (left, right) => {
+      insets.left = left;
+      insets.right = right;
+      resize();
+    },
     start: () => loop.start(),
     dispose: () => {
       loop.stop();
@@ -139,4 +157,7 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
       renderer.domElement.remove();
     },
   };
+  // Exposed for automated smoke tests and console debugging.
+  (window as unknown as { __app?: App }).__app = app;
+  return app;
 }

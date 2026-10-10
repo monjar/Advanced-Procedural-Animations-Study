@@ -3,7 +3,8 @@ import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import type { FixedStepLoop } from './loop';
 
 export function createPane(container: HTMLElement, title = 'Controls'): Pane {
-  const pane = new Pane({ container, title });
+  // Collapsed by default on narrow screens so the scene stays visible.
+  const pane = new Pane({ container, title, expanded: window.innerWidth >= 900 });
   pane.registerPlugin(EssentialsPlugin);
   return pane;
 }
