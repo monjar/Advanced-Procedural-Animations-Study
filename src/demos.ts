@@ -1,0 +1,157 @@
+export type Tier = 'Foundations' | 'Procedural Locomotion' | 'Data-Driven' | 'Physics-Based' | 'Learned';
+
+export interface DemoInfo {
+  id: string;
+  slug: string;
+  title: string;
+  tier: Tier;
+  summary: string;
+  tags: string[];
+  status: 'live' | 'planned';
+}
+
+export const TIERS: Tier[] = ['Foundations', 'Procedural Locomotion', 'Data-Driven', 'Physics-Based', 'Learned'];
+
+export const DEMOS: DemoInfo[] = [
+  {
+    id: '01',
+    slug: '01-second-order-dynamics',
+    title: 'Second-Order Dynamics',
+    tier: 'Foundations',
+    summary: 'Frame-rate-stable spring systems with frequency, damping and anticipation controls driving secondary motion.',
+    tags: ['springs', 'secondary motion', 'stability'],
+    status: 'planned',
+  },
+  {
+    id: '02',
+    slug: '02-analytic-ik',
+    title: 'Analytic IK: Two-Bone & Look-At',
+    tier: 'Foundations',
+    summary: 'Closed-form limb IK with pole vectors and soft-IK, plus cone-limited head and eye aiming.',
+    tags: ['IK', 'law of cosines', 'swing-twist'],
+    status: 'planned',
+  },
+  {
+    id: '03',
+    slug: '03-iterative-ik',
+    title: 'Iterative IK Lab',
+    tier: 'Foundations',
+    summary: 'CCD, FABRIK and Jacobian damped least squares side by side, with joint limits and convergence plots.',
+    tags: ['IK', 'FABRIK', 'Jacobian'],
+    status: 'planned',
+  },
+  {
+    id: '04',
+    slug: '04-xpbd',
+    title: 'XPBD Ropes, Tails & Cloth',
+    tier: 'Foundations',
+    summary: 'Compliant position-based dynamics for secondary motion pinned to animated characters.',
+    tags: ['XPBD', 'cloth', 'physics'],
+    status: 'planned',
+  },
+  {
+    id: '05',
+    slug: '05-hexapod',
+    title: 'Procedural Hexapod',
+    tier: 'Procedural Locomotion',
+    summary: 'Terrain-adaptive spider gait with raycast foot placement and wall-to-ceiling transitions.',
+    tags: ['gait', 'foot placement', 'raycast'],
+    status: 'planned',
+  },
+  {
+    id: '06',
+    slug: '06-quadruped',
+    title: 'Procedural Quadruped',
+    tier: 'Procedural Locomotion',
+    summary: 'Walk, trot, canter and gallop from a gait phase table with speed-driven transitions.',
+    tags: ['gait', 'phase', 'spine'],
+    status: 'planned',
+  },
+  {
+    id: '07',
+    slug: '07-biped',
+    title: 'Procedural Biped',
+    tier: 'Procedural Locomotion',
+    summary: 'Overgrowth-style locomotion from a few key poses, a stride wheel and springs.',
+    tags: ['stride wheel', 'springs', 'biped'],
+    status: 'planned',
+  },
+  {
+    id: '08',
+    slug: '08-foot-ik',
+    title: 'Foot IK over Mocap',
+    tier: 'Procedural Locomotion',
+    summary: 'Contact detection, foot locking and pelvis adjustment layered over clip playback on slopes and stairs.',
+    tags: ['layering', 'foot locking', 'mocap'],
+    status: 'planned',
+  },
+  {
+    id: '09',
+    slug: '09-motion-matching',
+    title: 'Motion Matching',
+    tier: 'Data-Driven',
+    summary: 'Feature-database search over CMU mocap with inertialized transitions and trajectory prediction.',
+    tags: ['motion matching', 'inertialization', 'mocap'],
+    status: 'planned',
+  },
+  {
+    id: '10',
+    slug: '10-active-ragdoll',
+    title: 'Active Ragdoll',
+    tier: 'Physics-Based',
+    summary: 'PD-controlled articulated body tracking animation, with balance, hit reactions and recovery.',
+    tags: ['PD control', 'Rapier', 'balance'],
+    status: 'planned',
+  },
+  {
+    id: '11',
+    slug: '11-gpu-crowds',
+    title: 'GPU Procedural Crowds',
+    tier: 'Physics-Based',
+    summary: 'Ten thousand boids with procedural swim undulation computed entirely on the GPU.',
+    tags: ['WebGPU', 'boids', 'vertex animation'],
+    status: 'planned',
+  },
+  {
+    id: '12',
+    slug: '12-evolved-creatures',
+    title: 'Evolved Virtual Creatures',
+    tier: 'Physics-Based',
+    summary: 'Karl Sims-style co-evolution of morphology and controllers in Web Workers.',
+    tags: ['genetic algorithm', 'Rapier', 'workers'],
+    status: 'planned',
+  },
+  {
+    id: '13',
+    slug: '13-rl-locomotion',
+    title: 'RL Locomotion Policy',
+    tier: 'Learned',
+    summary: 'PPO policy trained offline in MuJoCo, running live in the browser via ONNX and MuJoCo WASM.',
+    tags: ['PPO', 'MuJoCo', 'ONNX'],
+    status: 'planned',
+  },
+  {
+    id: '14',
+    slug: '14-llm-directed',
+    title: 'LLM-Directed Animation',
+    tier: 'Learned',
+    summary: 'Natural language compiled to schema-validated programs over the procedural animation vocabulary.',
+    tags: ['LLM', 'structured output', 'procedural'],
+    status: 'planned',
+  },
+  {
+    id: '15',
+    slug: '15-procedural-face',
+    title: 'Procedural Face',
+    tier: 'Learned',
+    summary: 'Saccades, blinks and audio-driven visemes on morph targets.',
+    tags: ['gaze', 'lip-sync', 'morph targets'],
+    status: 'planned',
+  },
+];
+
+export function demoById(id: string): DemoInfo {
+  const demo = DEMOS.find((d) => d.id === id);
+  if (!demo) throw new Error(`Unknown demo id: ${id}`);
+  return demo;
+}
