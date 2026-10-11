@@ -20,7 +20,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Foundations',
     summary: 'Frame-rate-stable spring systems with frequency, damping and anticipation controls driving secondary motion.',
     tags: ['springs', 'secondary motion', 'stability'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '02',
