@@ -7,7 +7,7 @@ technical write-up.
 | #  | Study                                   | Tier          | Builds on   | Status  |
 |----|-----------------------------------------|---------------|-------------|---------|
 | 01 | Second-Order Dynamics & Secondary Motion | Foundations   | –           | live    |
-| 02 | Analytic IK: Two-Bone, Aim, Look-At      | Foundations   | 01          | planned |
+| 02 | Analytic IK: Two-Bone, Aim, Look-At      | Foundations   | 01          | live    |
 | 03 | Iterative IK Lab: CCD / FABRIK / DLS     | Foundations   | 02          | planned |
 | 04 | XPBD Ropes, Tails & Cloth                | Foundations   | 01          | planned |
 | 05 | Procedural Hexapod / Spider              | Locomotion    | 01, 02, 03  | planned |

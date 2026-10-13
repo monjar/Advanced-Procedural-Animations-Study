@@ -29,7 +29,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Foundations',
     summary: 'Closed-form limb IK with pole vectors and soft-IK, plus cone-limited head and eye aiming.',
     tags: ['IK', 'law of cosines', 'swing-twist'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '03',
