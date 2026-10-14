@@ -83,7 +83,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Procedural Locomotion',
     summary: 'Contact detection, foot locking and pelvis adjustment layered over clip playback on slopes and stairs.',
     tags: ['layering', 'foot locking', 'mocap'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '09',
