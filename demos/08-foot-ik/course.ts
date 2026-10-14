@@ -30,8 +30,8 @@ export function courseNormal(z: number, out = new THREE.Vector3()): THREE.Vector
   return out.set(0, 2 * e, -(b - a)).normalize();
 }
 
-/** Profile points (z, y) including explicit vertical step faces. */
-function profile(): [number, number][] {
+/** Profile points (z, y) of the rendered course, including explicit vertical step faces. */
+export function courseProfile(): [number, number][] {
   const pts: [number, number][] = [];
   const steps = new Set<number>();
   for (let k = 0; k <= STEPS; k++) {
@@ -51,7 +51,7 @@ function profile(): [number, number][] {
 
 /** Extruded course mesh (flat-shaded) with outline edges. */
 export function courseMesh(width = 2.6): THREE.Group {
-  const pts = profile();
+  const pts = courseProfile();
   const pos: number[] = [];
   const half = width / 2;
   const quad = (a: number[], b: number[], c: number[], d: number[]) => pos.push(...a, ...b, ...c, ...a, ...c, ...d);

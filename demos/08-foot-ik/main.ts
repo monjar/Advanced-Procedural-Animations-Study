@@ -5,7 +5,7 @@ import { ClipPlayer, type ClipData } from '../../src/anim/clip';
 import { SegmentBatch } from '../../src/rig/segments';
 import { createDemoFrame } from '../../src/ui/demoFrame';
 import { courseHeight, courseMesh, courseNormal, COURSE_LENGTH } from './course';
-import { FootIK, type FootIKSettings } from './footik';
+import { FOOT_RENDER, FootIK, type FootIKSettings } from './footik';
 import writeup from './README.md?raw';
 
 const frame = createDemoFrame({
@@ -35,6 +35,7 @@ const data = (await (await fetch(new URL('../../assets/mocap/cmu-02_01-walk.json
 const player = new ClipPlayer(data);
 const raw = new ClipPlayer(data);
 const ik = new FootIK(player, courseHeight, courseNormal, ikSettings);
+raw.rootOffset.y = ik.lift; // the ghost gets the same sole thickness, so it differs only by the IK layer
 
 const batch = new SegmentBatch(64, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }));
 app.scene.add(batch);
@@ -42,17 +43,23 @@ const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 24, 16), new THREE.Mes
 head.castShadow = true;
 app.scene.add(head);
 
-// Radius per bone (segment from the bone's parent to the bone).
+// Radius per bone (segment from the bone's parent to the bone). Shin and foot come from FOOT_RENDER, the
+// shape the IK layer keeps out of the course.
 function radius(name: string): number {
   if (/UpLeg/.test(name)) return 0.07;
   if (/Leg$/.test(name)) return 0.055;
-  if (/Foot$/.test(name)) return 0.045;
-  if (/Toe/.test(name)) return 0.035;
+  if (/Foot$/.test(name)) return FOOT_RENDER.shin;
+  if (/Toe/.test(name)) return FOOT_RENDER.foot;
   if (/Spine|LowerBack/.test(name)) return 0.1;
   if (/Neck/.test(name)) return 0.045;
   if (/ForeArm|Hand/.test(name)) return 0.035;
   if (/Arm|Shoulder/.test(name)) return 0.045;
   return 0.06;
+}
+function jointRadius(name: string): number {
+  if (/Foot$/.test(name)) return FOOT_RENDER.ankle;
+  if (/Toe/.test(name)) return FOOT_RENDER.toe;
+  return radius(name) * 1.05;
 }
 function color(name: string): number {
   if (/^Left(Foot|Toe)/.test(name)) return LEFT;
@@ -90,7 +97,7 @@ app.onFrame((_alpha, frameDt) => {
     const r = radius(bone.name);
     batch.segment(b, a, r, color(bone.name));
     const jointColor = /Foot|Toe/.test(bone.name) ? color(bone.name) : /Leg$|ForeArm|Hand/.test(bone.name) ? JOINT : BODY;
-    batch.joint(a, r * 1.05, jointColor);
+    batch.joint(a, jointRadius(bone.name), jointColor);
   });
   batch.commit();
   player.bone('Head').getWorldPosition(head.position);
@@ -123,13 +130,14 @@ app.onFrame((_alpha, frameDt) => {
   if (readTimer <= 0) {
     readTimer = 0.15;
     const cm = (v: number) => (v * 100).toFixed(1).padStart(6);
+    const col = (...c: string[]) => c.map((x) => x.padStart(6)).join('');
     const rows = ik.feet.map(
       (f) =>
-        `${f.side.padEnd(5)} ${cm(f.rawError)} ${cm(f.ikError)}   ${cm(f.lastSlip.raw)} ${cm(f.lastSlip.ik)}  ${f.flat ? 'flat' : f.contact > 0.5 ? 'roll' : 'swing'}`,
+        `${f.side.padEnd(5)}${cm(f.rawDepth)}${cm(f.offset)}${cm(f.guard)}  ${cm(f.lastSlip.raw)}${cm(f.lastSlip.ik)}  ${f.flat ? 'flat' : f.contact > 0.5 ? 'roll' : 'swing'}`,
     );
     readout.textContent =
-      `        foot error cm    slip/stance cm\n` +
-      `         raw     IK      raw     IK\n` +
+      `     ${col('raw', 'IK', 'IK')}  ${col('slip', 'slip')}\n` +
+      `     ${col('inside', 'lift', 'guard')}  ${col('raw', 'IK')}   (cm)\n` +
       `${rows.join('\n')}\n\n` +
       `pelvis ${cm(ik.pelvis.x)} cm · reach drop ${cm(ik.reachDrop)} cm`;
   }
