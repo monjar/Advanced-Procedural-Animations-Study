@@ -102,7 +102,7 @@ app.onFixedUpdate((dt, time) => {
   }
   settings.targetSpeed = target;
   biped.update(dt, target, turn);
-  chart.push(biped.feet.map((f) => !f.swinging));
+  chart.sample(biped.feet.map((f) => !f.swinging), dt);
 });
 
 // ---------------------------------------------------------------------------

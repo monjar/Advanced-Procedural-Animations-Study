@@ -21,9 +21,20 @@ export class GaitChart {
     this.ctx = this.canvas.getContext('2d')!;
   }
 
+  private elapsed = 0;
+
   push(stance: boolean[]): void {
     for (let i = 0; i < this.history.length; i++) this.history[i][this.head] = stance[i] ? 1 : 0;
     this.head = (this.head + 1) % this.length;
+  }
+
+  /** Record on simulation time (one column per `interval` s), independent of the step size. */
+  sample(stance: boolean[], dt: number, interval = 1 / 60): void {
+    this.elapsed += dt;
+    while (this.elapsed >= interval) {
+      this.push(stance);
+      this.elapsed -= interval;
+    }
   }
 
   draw(): void {

@@ -114,7 +114,7 @@ app.onFixedUpdate((dt, time) => {
     turn = circleSteer(dog.position, dog.yaw);
   }
   dog.update(dt, target, turn);
-  chart.push(dog.legs.map((l) => !l.swinging));
+  chart.sample(dog.legs.map((l) => !l.swinging), dt);
 });
 
 // ---------------------------------------------------------------------------

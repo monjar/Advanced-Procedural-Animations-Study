@@ -244,7 +244,7 @@ function redrawPlot(): void {
     ],
     duration,
   );
-  legend.textContent = `${f.name} @ ${Math.round(1 / dt)} Hz${
+  legend.textContent = `${f.name} @ ${Math.round(1 / dt)} Hz ${app.loop.mode === 'fixed' ? 'fixed' : 'max'} step${
     f.halflife === undefined ? ` · ${settings.integrator}` : ' · exact'
   } — dashed: 1 kHz reference`;
 }

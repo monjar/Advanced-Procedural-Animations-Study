@@ -35,8 +35,9 @@ y' += dt · (x + k3·x' − y − k1·y') / k2
 ```
 
 This is only stable while `dt` is small relative to the system's time constant. Set **Integration →
-naive euler**, raise **Bouncy → f** to ~8 and drop **Simulation → sim rate** to 30 Hz: the follower
-diverges and keeps getting reset.
+naive euler**, raise **Bouncy → f** to ~8, then under **Simulation** set **timestep: fixed** and
+**step rate: 30 Hz**: the follower diverges and keeps getting reset. (In the default *synced* timestep the
+step follows the display frame time, which on most screens is already short enough to hide the problem.)
 
 Two fixes are implemented:
 

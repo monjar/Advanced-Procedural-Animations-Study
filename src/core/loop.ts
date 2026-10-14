@@ -1,20 +1,28 @@
 export interface LoopHandlers {
-  /** Called at a fixed rate. All simulation belongs here. */
+  /** Simulation step. All simulation belongs here. */
   fixedUpdate?: (dt: number, time: number) => void;
-  /** Called once per rendered frame. `alpha` is the fraction of a fixed step left in the accumulator. */
+  /** Called once per rendered frame. `alpha` is the fraction of a step left unsimulated (fixed mode only). */
   frame?: (alpha: number, frameDt: number) => void;
 }
 
 /**
- * Fixed-timestep loop (accumulator pattern). Simulation runs at `rate` Hz regardless
- * of display refresh, so results do not depend on the viewer's monitor.
+ * - `synced`: every rendered frame advances the simulation by exactly the elapsed time, split into
+ *   equal steps no longer than `dt`. What is drawn is always the state at the frame's time, so motion
+ *   is smooth at any refresh rate. Steps vary slightly in length.
+ * - `fixed`: classic accumulator; every step is exactly `dt`. Deterministic, but without render
+ *   interpolation a frame shows the state of the last whole step, so motion judders whenever display
+ *   and simulation rates differ (0 or 2 steps in some frames).
  */
+export type StepMode = 'synced' | 'fixed';
+
 export class FixedStepLoop {
+  /** Step length (fixed mode) or maximum step length (synced mode). */
   dt: number;
+  mode: StepMode = 'synced';
   time = 0;
   timeScale = 1;
   paused = false;
-  /** Upper bound on fixed steps per frame; prevents a spiral of death after a long stall. */
+  /** Upper bound on steps per frame; prevents a spiral of death after a long stall. */
   maxSteps = 16;
 
   private accumulator = 0;
@@ -46,10 +54,10 @@ export class FixedStepLoop {
     this.raf = 0;
   }
 
-  /** Advance exactly one fixed step (used for single-stepping while paused). */
-  step(): void {
-    this.handlers.fixedUpdate?.(this.dt, this.time);
-    this.time += this.dt;
+  /** Advance exactly one step of `dt` (used for single-stepping while paused). */
+  step(dt = this.dt): void {
+    this.handlers.fixedUpdate?.(dt, this.time);
+    this.time += dt;
   }
 
   private tick = (now: number): void => {
@@ -57,17 +65,29 @@ export class FixedStepLoop {
     const frameDt = this.last < 0 ? 0 : Math.min((now - this.last) / 1000, 0.25);
     this.last = now;
 
+    let alpha = 0;
     if (!this.paused) {
-      this.accumulator += frameDt * this.timeScale;
-      let steps = 0;
-      while (this.accumulator >= this.dt && steps < this.maxSteps) {
-        this.step();
-        this.accumulator -= this.dt;
-        steps++;
+      const budget = frameDt * this.timeScale;
+      if (this.mode === 'synced') {
+        if (budget > 0) {
+          const n = Math.min(this.maxSteps, Math.max(1, Math.ceil(budget / this.dt - 1e-6)));
+          const h = budget / n;
+          for (let i = 0; i < n; i++) this.step(h);
+        }
+        this.accumulator = 0;
+      } else {
+        this.accumulator += budget;
+        let steps = 0;
+        while (this.accumulator >= this.dt && steps < this.maxSteps) {
+          this.step();
+          this.accumulator -= this.dt;
+          steps++;
+        }
+        if (steps === this.maxSteps) this.accumulator = 0;
+        alpha = this.accumulator / this.dt;
       }
-      if (steps === this.maxSteps) this.accumulator = 0;
     }
 
-    this.handlers.frame?.(this.accumulator / this.dt, frameDt);
+    this.handlers.frame?.(alpha, frameDt);
   };
 }

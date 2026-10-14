@@ -109,7 +109,7 @@ app.onFixedUpdate((dt) => {
     if (spider.up.y > 0.7) spider.update(dt, 1, 0, steer.set(dx, 0, dz));
     else spider.update(dt, 1, 0);
   }
-  chart.push(spider.legs.map((l) => !l.stepping));
+  chart.sample(spider.legs.map((l) => !l.stepping), dt);
 });
 
 // ---------------------------------------------------------------------------
