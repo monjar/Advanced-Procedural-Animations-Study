@@ -4,8 +4,9 @@
 //   bash tools/fetch-cmu16.sh && node tools/build-mm-db.mjs [.cache/cmu16] [public/assets/mocap/cmu16-mm.bin]
 //
 // The tool only cleans and packs the data: true CMU scale (metres), 120 → 60 Hz, T-pose frame dropped,
-// fingers dropped (25 joints), per-take ground removed, foot contact labels, standing segments cut out of
-// the jump takes as idle data. Everything derived (simulation bone, mirroring, features) is computed at load
+// fingers dropped (25 joints), the first and last frames of every take trimmed and single-frame rotation
+// spikes removed (marker glitches), per-take ground removed, foot contact labels, standing segments cut out
+// of the jump takes as idle data. Everything derived (simulation bone, mirroring, features) is computed at load
 // time in TypeScript (src/anim/mmdb.ts) so one tested implementation serves the page and the tests.
 //
 // Binary layout (little endian): 'MMDB' · u32 version · u32 header bytes · header JSON (padded to 4) ·
@@ -21,6 +22,10 @@ const [dir = '.cache/cmu16', output = 'public/assets/mocap/cmu16-mm.bin'] = proc
 const SCALE = 0.0254 / 0.45;
 const DROP = /Finger|Thumb|HandIndex/;
 const MAX_QUANT_ERROR_DEG = 0.05;
+/** Frames dropped at both ends of a take (capture start/stop glitches). */
+const TRIM = 3;
+/** A joint rotation that jumps more than this from both neighbours, which agree, is a glitch. */
+const SPIKE_DEG = 12;
 
 // Locomotion takes (descriptions from the CMU index) and jump takes whose standing start becomes idle data.
 const TAKES = {
@@ -68,8 +73,36 @@ function load(id) {
       feet: { left: [w('LeftFoot'), w('LeftToeBase')], right: [w('RightFoot'), w('RightToeBase')] },
     });
   }
-  return { bones, frames };
+  return { bones, frames: despike(frames.slice(TRIM, frames.length - TRIM)) };
 }
+
+const angle = (a, b) => THREE.MathUtils.radToDeg(2 * Math.acos(Math.min(1, Math.abs(a.dot(b)))));
+
+/**
+ * Replace isolated rotation spikes (one or two frames far from both neighbours, which agree with each other)
+ * by interpolating across them. CMU toes and the first frames of some takes have these.
+ */
+function despike(frames) {
+  let fixed = 0;
+  const J = frames[0].rots.length;
+  for (let j = 1; j < J; j++) {
+    for (const width of [1, 2]) {
+      for (let i = 1; i + width < frames.length; i++) {
+        const a = frames[i - 1].rots[j];
+        const b = frames[i + width].rots[j];
+        if (angle(a, b) > SPIKE_DEG) continue;
+        let spike = true;
+        for (let k = 0; k < width; k++) if (angle(frames[i + k].rots[j], a) < SPIKE_DEG || angle(frames[i + k].rots[j], b) < SPIKE_DEG) spike = false;
+        if (!spike) continue;
+        for (let k = 0; k < width; k++) frames[i + k].rots[j] = a.clone().slerp(b, (k + 1) / (width + 1));
+        fixed++;
+      }
+    }
+  }
+  despiked += fixed;
+  return frames;
+}
+let despiked = 0;
 
 /** Lowest toe/ankle height (2nd percentile, robust to marker glitches). */
 function groundOf(frames) {
@@ -195,5 +228,6 @@ writeFileSync(output, buf);
 const idle = takes.filter((t) => t.description === 'idle');
 console.log(
   `${takes.length} takes (${idle.length} idle: ${idle.map((t) => `${t.name} ${(t.frames / 60).toFixed(2)} s`).join(', ')}), ` +
-    `${N} frames (${(N / 60).toFixed(1)} s), ${J} joints, ${(total / 1024).toFixed(0)} KB, max quantisation error ${maxErr.toFixed(4)}°`,
+    `${N} frames (${(N / 60).toFixed(1)} s), ${J} joints, ${(total / 1024).toFixed(0)} KB, ${despiked} rotation spikes removed, ` +
+    `max quantisation error ${maxErr.toFixed(4)}°`,
 );

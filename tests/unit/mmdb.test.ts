@@ -28,7 +28,7 @@ describe('motion matching database (CMU subject 16)', () => {
     expect(statSync(MMDB_PATH).size).toBeLessThan(1.3e6);
     expect(db.joints).toHaveLength(25);
     expect(db.takes).toHaveLength(106);
-    expect(db.frames).toBe(2 * 7326);
+    expect(db.frames).toBe(2 * 7020);
     expect(db.takes.filter((t) => t.description === 'idle')).toHaveLength(8);
     for (const t of db.takes) for (let f = t.start; f < t.start + t.frames; f++) expect(db.take[f]).toBe(db.takes.indexOf(t));
   });
@@ -116,7 +116,7 @@ describe('motion matching database (CMU subject 16)', () => {
   it('can be parsed without mirroring', () => {
     const b = readFileSync(MMDB_PATH);
     const plain = parseMotionDB(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer, false);
-    expect(plain.frames).toBe(7326);
+    expect(plain.frames).toBe(7020);
     expect(plain.takes.every((t) => !t.mirrored)).toBe(true);
   });
 });
