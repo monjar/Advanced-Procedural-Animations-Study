@@ -22,7 +22,9 @@ export interface BodyDef {
   /** Capsule end points, as joint names (or a joint name + an offset in the bone frame). */
   a: string;
   b: string;
+  /** Lengthen the capsule past `b` / shorten it from `a` (m). */
   extend?: number;
+  trim?: number;
   radius: number;
   /** Fraction of body mass (de Leva 1996). */
   mass: number;
@@ -32,7 +34,7 @@ export const BODY_DEFS: BodyDef[] = [
   { name: 'pelvis', bone: 'Hips', a: 'LeftUpLeg', b: 'RightUpLeg', radius: 0.09, mass: 0.1117 },
   { name: 'abdomen', bone: 'Spine', parent: 'pelvis', a: 'Spine', b: 'Spine1', radius: 0.1, mass: 0.1633 },
   { name: 'chest', bone: 'Spine1', parent: 'abdomen', a: 'LeftArm', b: 'RightArm', radius: 0.1, mass: 0.1596 },
-  { name: 'head', bone: 'Neck1', parent: 'chest', a: 'Neck1', b: 'Head', extend: 0.06, radius: 0.1, mass: 0.0694 },
+  { name: 'head', bone: 'Neck1', parent: 'chest', a: 'Neck1', b: 'Head', trim: 0.07, extend: 0.05, radius: 0.09, mass: 0.0694 },
   { name: 'upperArmL', bone: 'LeftArm', parent: 'chest', a: 'LeftArm', b: 'LeftForeArm', radius: 0.045, mass: 0.0271 },
   { name: 'forearmL', bone: 'LeftForeArm', parent: 'upperArmL', a: 'LeftForeArm', b: 'LeftHand', extend: 0.08, radius: 0.04, mass: 0.0223 },
   { name: 'upperArmR', bone: 'RightArm', parent: 'chest', a: 'RightArm', b: 'RightForeArm', radius: 0.045, mass: 0.0271 },
@@ -186,6 +188,7 @@ export class Ragdoll {
       const a = rest.get(def.a)!.clone().sub(origin);
       const b = rest.get(def.b)!.clone().sub(origin);
       if (def.extend) b.add(_v.subVectors(b, a).normalize().multiplyScalar(def.extend));
+      if (def.trim) a.add(_v.subVectors(b, a).normalize().multiplyScalar(def.trim));
       const rb = this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(origin.x, origin.y, origin.z).setCanSleep(false));
       const mid = _v.addVectors(a, b).multiplyScalar(0.5);
       const half = a.distanceTo(b) / 2;

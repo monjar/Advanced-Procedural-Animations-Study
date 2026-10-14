@@ -99,9 +99,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '10-active-ragdoll',
     title: 'Active Ragdoll',
     tier: 'Physics-Based',
-    summary: 'PD-controlled articulated body tracking animation, with balance, hit reactions and recovery.',
-    tags: ['PD control', 'Rapier', 'balance'],
-    status: 'planned',
+    summary: 'Rapier capsules tracking mocap with motor muscles and PuppetMaster pins: hit it, knock it down, watch it recover.',
+    tags: ['joint motors', 'Rapier', 'PuppetMaster'],
+    status: 'live',
   },
   {
     id: '11',
