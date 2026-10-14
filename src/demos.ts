@@ -108,9 +108,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '11-gpu-crowds',
     title: 'GPU Procedural Crowds',
     tier: 'Physics-Based',
-    summary: 'Ten thousand boids with procedural swim undulation computed entirely on the GPU.',
-    tags: ['WebGPU', 'boids', 'vertex animation'],
-    status: 'planned',
+    summary: 'Sixteen thousand boids on WebGL2 GPGPU — a bitonic-sorted spatial grid — with swim undulation in the vertex shader.',
+    tags: ['GPGPU', 'boids', 'vertex animation'],
+    status: 'live',
   },
   {
     id: '12',
