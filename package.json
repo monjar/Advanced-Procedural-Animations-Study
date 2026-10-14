@@ -13,6 +13,7 @@
     "test:e2e": "vite build && playwright test"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
     "@tweakpane/plugin-essentials": "^0.2.1",
     "marked": "^18.1.1",
     "three": "^0.186.1",
