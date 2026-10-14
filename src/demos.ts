@@ -54,7 +54,7 @@ export const DEMOS: DemoInfo[] = [
     slug: '05-hexapod',
     title: 'Procedural Hexapod',
     tier: 'Procedural Locomotion',
-    summary: 'Terrain-adaptive spider gait with raycast foot placement and wall-to-ceiling transitions.',
+    summary: 'Terrain-adaptive spider gait with raycast footholds that climbs walls and over their top edges.',
     tags: ['gait', 'foot placement', 'raycast'],
     status: 'live',
   },
