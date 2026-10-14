@@ -16,6 +16,7 @@
     "@tweakpane/plugin-essentials": "^0.2.1",
     "marked": "^18.1.1",
     "three": "^0.186.1",
+    "three-mesh-bvh": "^0.9.16",
     "tweakpane": "^4.0.5"
   },
   "devDependencies": {

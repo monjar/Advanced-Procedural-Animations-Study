@@ -38,7 +38,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Foundations',
     summary: 'CCD, FABRIK and Jacobian damped least squares side by side, with joint limits and convergence plots.',
     tags: ['IK', 'FABRIK', 'Jacobian'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '04',
@@ -47,16 +47,16 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Foundations',
     summary: 'Compliant position-based dynamics for secondary motion pinned to animated characters.',
     tags: ['XPBD', 'cloth', 'physics'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '05',
     slug: '05-hexapod',
     title: 'Procedural Hexapod',
     tier: 'Procedural Locomotion',
-    summary: 'Terrain-adaptive spider gait with raycast foot placement and wall-to-ceiling transitions.',
+    summary: 'Terrain-adaptive spider gait with raycast footholds that climbs walls and over their top edges.',
     tags: ['gait', 'foot placement', 'raycast'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '06',
@@ -65,7 +65,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Procedural Locomotion',
     summary: 'Walk, trot, canter and gallop from a gait phase table with speed-driven transitions.',
     tags: ['gait', 'phase', 'spine'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '07',
@@ -74,7 +74,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Procedural Locomotion',
     summary: 'Overgrowth-style locomotion from a few key poses, a stride wheel and springs.',
     tags: ['stride wheel', 'springs', 'biped'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '08',
@@ -83,7 +83,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Procedural Locomotion',
     summary: 'Contact detection, foot locking and pelvis adjustment layered over clip playback on slopes and stairs.',
     tags: ['layering', 'foot locking', 'mocap'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '09',

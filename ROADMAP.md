@@ -8,12 +8,12 @@ technical write-up.
 |----|-----------------------------------------|---------------|-------------|---------|
 | 01 | Second-Order Dynamics & Secondary Motion | Foundations   | –           | live    |
 | 02 | Analytic IK: Two-Bone, Aim, Look-At      | Foundations   | 01          | live    |
-| 03 | Iterative IK Lab: CCD / FABRIK / DLS     | Foundations   | 02          | planned |
-| 04 | XPBD Ropes, Tails & Cloth                | Foundations   | 01          | planned |
-| 05 | Procedural Hexapod / Spider              | Locomotion    | 01, 02, 03  | planned |
-| 06 | Procedural Quadruped                     | Locomotion    | 05          | planned |
-| 07 | Procedural Biped (Overgrowth-style)      | Locomotion    | 01, 02      | planned |
-| 08 | Foot IK & Ground Adaptation over Mocap   | Locomotion    | 02, 07      | planned |
+| 03 | Iterative IK Lab: CCD / FABRIK / DLS     | Foundations   | 02          | live    |
+| 04 | XPBD Ropes, Tails & Cloth                | Foundations   | 01          | live    |
+| 05 | Procedural Hexapod / Spider              | Locomotion    | 01, 02, 03  | live    |
+| 06 | Procedural Quadruped                     | Locomotion    | 05          | live    |
+| 07 | Procedural Biped (Overgrowth-style)      | Locomotion    | 01, 02      | live    |
+| 08 | Foot IK & Ground Adaptation over Mocap   | Locomotion    | 02, 07      | live    |
 | 09 | Motion Matching + Inertialization        | Data-driven   | 08          | planned |
 | 10 | Active Ragdoll                           | Physics       | 02, 08      | planned |
 | 11 | GPU Procedural Crowds                    | Physics / GPU | 01          | planned |
@@ -68,7 +68,7 @@ technical write-up.
 ### 05 · Procedural Hexapod / Spider
 - **Techniques:** raycast foot targets; step-distance trigger; tripod gait phase groups; arc-shaped swing
   trajectories; body height and orientation fitted to the foot plane; surface-normal-aligned movement for walls/ceilings.
-- **Done when:** walks across uneven terrain and transitions floor → wall without foot sliding.
+- **Done when:** walks across uneven terrain and transitions floor → wall → over the top → floor without foot sliding (unit-tested). Ceilings are not covered.
 - **References:** J. Jakobsson & J. Primate, *The Rain World Animation Process* (GDC 2016).
 
 ### 06 · Procedural Quadruped
