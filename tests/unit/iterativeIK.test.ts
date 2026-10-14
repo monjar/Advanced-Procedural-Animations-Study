@@ -86,6 +86,17 @@ describe.each(Object.entries(solvers))('%s', (name, solve) => {
     });
   });
 
+  it.skipIf(name === 'pinv' || name === 'transpose')('converges on a tightly limited chain (30° cones)', () => {
+    // Regression: FABRIK used to stall here when cones were only enforced in the forward pass.
+    for (let k = 0; k < 12; k++) {
+      const a = k * 2.39996;
+      const t = v(0.6 * Math.sin(a), 0.6 + 0.8 * ((k * 0.618) % 1), 0.5 * Math.cos(a * 1.3));
+      const c = new Chain(Array.from({ length: 12 }, () => ({ bone: v(0, 0.14, 0), cone: 30 * (Math.PI / 180), twist: 0.26 })));
+      const r = solve(c, t);
+      expect(r.error, `${name} target ${k}`).toBeLessThan(1e-3);
+    }
+  });
+
   it('respects cone limits', () => {
     const cone = 0.35;
     const c = tentacle(8, 0.2, cone, 0.2);

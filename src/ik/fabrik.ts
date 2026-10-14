@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { clampToCone } from '../math/quat';
 import { signedAngleAbout, type Chain, type SolveOptions, type SolveResult } from './chain';
 
 const _p: THREE.Vector3[] = [];
@@ -8,11 +9,16 @@ const _axis = new THREE.Vector3();
 const _delta = new THREE.Quaternion();
 const _toE = new THREE.Vector3();
 const _toT = new THREE.Vector3();
+const _next = new THREE.Vector3();
+const _bone = new THREE.Vector3();
 
 /**
  * FABRIK (Aristidou & Lasenby 2011) on a rotational chain.
  *
- * Backward pass: unconstrained positions from the target to the root.
+ * Backward pass: positions from the target to the root. Where a ball joint sits between two collinear
+ * rest bones, its cone limit is enforced here too, relative to the child bone (Aristidou's
+ * "reorientation" step) — without it the backward pass keeps proposing shapes the forward pass cannot
+ * realise and tightly limited chains stall far from the target.
  * Forward pass: re-solve each joint *as a rotation* that aims its bone at the backward-pass position,
  * then apply the joint limits, so FABRIK respects the same hinge/cone/twist constraints as CCD and
  * the Jacobian solver. Hinges whose bone is parallel to their axis (yaw/roll joints) cannot be aimed by
@@ -30,7 +36,15 @@ export function solveFABRIK(chain: Chain, target: THREE.Vector3, o: SolveOptions
     for (let i = n - 1; i >= 0; i--) {
       _dir.subVectors(chain.positions[i], _p[i + 1]);
       if (_dir.lengthSq() < 1e-14) _dir.subVectors(chain.positions[i], chain.positions[i + 1]);
-      _p[i].copy(_p[i + 1]).addScaledVector(_dir.normalize(), chain.joints[i].length);
+      _dir.normalize();
+      const child = chain.joints[i + 1];
+      if (child && child.type === 'ball' && child.cone < Math.PI && child.boneDir.dot(chain.joints[i].boneDir) > 0.999) {
+        // Bone i must lie within joint i+1's cone around bone i+1.
+        _next.subVectors(_p[i + 2], _p[i + 1]).normalize();
+        clampToCone(_bone.copy(_dir).negate(), _next, child.cone, _bone);
+        _dir.copy(_bone).negate();
+      }
+      _p[i].copy(_p[i + 1]).addScaledVector(_dir, chain.joints[i].length);
     }
 
     // Forward: root to tip, as constrained rotations.
