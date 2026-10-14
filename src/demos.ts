@@ -90,9 +90,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '09-motion-matching',
     title: 'Motion Matching',
     tier: 'Data-Driven',
-    summary: 'Feature-database search over CMU mocap with inertialized transitions and trajectory prediction.',
+    summary: 'Feature-database search over two minutes of CMU mocap with inertialized transitions and spring trajectories.',
     tags: ['motion matching', 'inertialization', 'mocap'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '10',
