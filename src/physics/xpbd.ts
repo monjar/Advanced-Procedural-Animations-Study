@@ -31,6 +31,8 @@ export class ParticleSystem {
   readonly prev: Float64Array;
   readonly v: Float64Array;
   readonly w: Float64Array;
+  /** Per-particle external acceleration (e.g. aerodynamic drag), added during prediction. */
+  readonly acc: Float64Array;
   /** Particle radius for collisions. */
   radius = 0.02;
   count = 0;
@@ -66,6 +68,7 @@ export class ParticleSystem {
     this.prev = new Float64Array(capacity * 3);
     this.v = new Float64Array(capacity * 3);
     this.w = new Float64Array(capacity);
+    this.acc = new Float64Array(capacity * 3);
     this.ca = new Int32Array(constraintCapacity);
     this.cb = new Int32Array(constraintCapacity);
     this.rest = new Float64Array(constraintCapacity);
@@ -151,7 +154,7 @@ export class ParticleSystem {
   step(dt: number): void {
     const n = this.count;
     const h = dt / this.substeps;
-    const { x, prev, v, w } = this;
+    const { x, prev, v, w, acc } = this;
     const gx = (this.gravity.x + this.wind.x) * h;
     const gy = (this.gravity.y + this.wind.y) * h;
     const gz = (this.gravity.z + this.wind.z) * h;
@@ -165,9 +168,9 @@ export class ParticleSystem {
         prev[j + 1] = x[j + 1];
         prev[j + 2] = x[j + 2];
         if (w[i] === 0) continue;
-        v[j] += gx;
-        v[j + 1] += gy;
-        v[j + 2] += gz;
+        v[j] += gx + acc[j] * h;
+        v[j + 1] += gy + acc[j + 1] * h;
+        v[j + 2] += gz + acc[j + 2] * h;
         x[j] += v[j] * h;
         x[j + 1] += v[j + 1] * h;
         x[j + 2] += v[j + 2] * h;

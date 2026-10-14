@@ -47,7 +47,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Foundations',
     summary: 'Compliant position-based dynamics for secondary motion pinned to animated characters.',
     tags: ['XPBD', 'cloth', 'physics'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '05',
