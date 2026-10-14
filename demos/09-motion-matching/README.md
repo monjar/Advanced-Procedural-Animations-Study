@@ -48,6 +48,10 @@ or held if it ended at rest. A frame is only a candidate if the take continues f
 2. **Search** every 10 frames, immediately when the input changes sharply, and whenever the take runs out:
    query = predicted trajectory (in the character's frame) + the playing frame's own foot and hip features.
    Jump only if the best match is cheaper than continuing and not just a few frames along the same take.
+   The search is exact either way: brute force with early exit, or Holden's two-level **bounding boxes**
+   (per-dimension min/max of the normalised features over runs of 64 and 16 frames; a run is skipped when
+   even its box can't beat the best cost so far). Same frame, same cost — the tests compare them on 1 500
+   queries.
 3. **Root motion**: the character moves by the database's root velocity — that is what keeps feet planted.
    Two small corrections tie it to the controller: **adjust** pulls the character towards the predicted path
    but never by more than half its own speed (so a standing character never skates), and **clamp** keeps the
@@ -72,8 +76,11 @@ identically at any display rate.
 | per-frame joint change in the data itself (99th percentile) | 18° |
 | 25 / 60 / 144 fps | same path, same switches |
 
-Inertialized switches are no rougher than the mocap itself; hard cuts are 4–6× worse. Brute-force search
-over the 13 000 candidates takes about 0.3 ms.
+Inertialized switches are no rougher than the mocap itself; hard cuts are 4–6× worse.
+
+Search, over 12 980 candidates: brute force (with early exit) 0.22 ms; bounding boxes evaluate 9 % of the
+frames and take 0.11 ms. Only 2× — at two minutes of data brute force is already cheap; the boxes matter at
+hours of data.
 
 ## Failure modes
 

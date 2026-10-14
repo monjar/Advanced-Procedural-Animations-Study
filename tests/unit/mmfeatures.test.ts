@@ -71,3 +71,39 @@ describe('motion matching features', () => {
     expect(checked).toBeGreaterThan(100);
   });
 });
+
+describe('AABB-accelerated search', () => {
+  it('returns exactly the brute-force frame and cost, on database frames and noisy queries', async () => {
+    const { searchAABB } = await import('../../src/anim/mmfeatures');
+    const q = new Float32Array(DIMS);
+    let s = 7;
+    const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32 - 0.5) * 2;
+    let mismatches = 0;
+    for (let i = 0; i < 1500; i++) {
+      const f = Math.floor(((i * 7919) % db.frames));
+      q.set(mf.features.subarray(f * DIMS, (f + 1) * DIMS));
+      if (i % 2) for (let d = 0; d < DIMS; d++) q[d] += rnd() * 0.5;
+      const a = searchBrute(mf, q, w);
+      const b = searchAABB(mf, q, w);
+      if (a.frame !== b.frame || a.cost !== b.cost) mismatches++;
+    }
+    expect(mismatches).toBe(0);
+  });
+
+  it('evaluates a fraction of the candidates', async () => {
+    const mod = await import('../../src/anim/mmfeatures');
+    const q = new Float32Array(DIMS);
+    let total = 0;
+    let n = 0;
+    for (let f = 0; f < db.frames; f += 211) {
+      if (!mf.matchable[f]) continue;
+      q.set(mf.features.subarray(f * DIMS, (f + 1) * DIMS));
+      q[0] += 0.3; // not an exact database frame
+      mod.searchAABB(mf, q, w);
+      total += mod.aabbEvaluated;
+      n++;
+    }
+    const candidates = mf.matchable.reduce((a, b) => a + b, 0);
+    expect(total / n / candidates).toBeLessThan(0.35);
+  });
+});

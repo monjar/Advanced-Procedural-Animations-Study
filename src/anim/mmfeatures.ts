@@ -309,3 +309,94 @@ export function searchBrute(mf: MotionFeatures, q: Float32Array, w: Float32Array
   out.cost = best;
   return out;
 }
+
+/** Two-level bounding boxes (Holden): per-dimension min/max of normalised features over runs of frames. */
+export interface FeatureAABB {
+  small: number;
+  large: number;
+  smallMin: Float32Array;
+  smallMax: Float32Array;
+  largeMin: Float32Array;
+  largeMax: Float32Array;
+}
+
+const aabbCache = new WeakMap<MotionFeatures, FeatureAABB>();
+
+export function buildAABB(mf: MotionFeatures, small = 16, large = 64): FeatureAABB {
+  const N = mf.db.frames;
+  const box = (size: number) => {
+    const n = Math.ceil(N / size);
+    const min = new Float32Array(n * DIMS).fill(Infinity);
+    const max = new Float32Array(n * DIMS).fill(-Infinity);
+    for (let f = 0; f < N; f++) {
+      const b = Math.floor(f / size) * DIMS;
+      for (let d = 0; d < DIMS; d++) {
+        const v = mf.features[f * DIMS + d];
+        if (v < min[b + d]) min[b + d] = v;
+        if (v > max[b + d]) max[b + d] = v;
+      }
+    }
+    return [min, max];
+  };
+  const [smallMin, smallMax] = box(small);
+  const [largeMin, largeMax] = box(large);
+  return { small, large, smallMin, smallMax, largeMin, largeMax };
+}
+
+/** Lower bound of the weighted cost of any frame in a box. */
+function boxBound(q: Float32Array, w: Float32Array, min: Float32Array, max: Float32Array, b: number, best: number): number {
+  let c = 0;
+  for (let d = 0; d < DIMS; d++) {
+    const v = q[d];
+    const lo = min[b + d];
+    const hi = max[b + d];
+    const e = v < lo ? lo - v : v > hi ? v - hi : 0;
+    c += w[d] * e * e;
+    if (c >= best) return c;
+  }
+  return c;
+}
+
+/** Frames whose full cost was evaluated by the last {@link searchAABB} call (for measuring pruning). */
+export let aabbEvaluated = 0;
+
+/**
+ * Same result as {@link searchBrute} (frames are visited in index order with the same strict comparison), but
+ * skips whole runs of 64 and 16 frames whose bounding box cannot beat the best cost so far.
+ */
+export function searchAABB(mf: MotionFeatures, q: Float32Array, w: Float32Array, out: Match = { frame: -1, cost: Infinity }): Match {
+  let tree = aabbCache.get(mf);
+  if (!tree) aabbCache.set(mf, (tree = buildAABB(mf)));
+  const F = mf.features;
+  const N = mf.db.frames;
+  let best = Infinity;
+  let bestFrame = -1;
+  let evaluated = 0;
+  for (let L = 0; L * tree.large < N; L++) {
+    if (boxBound(q, w, tree.largeMin, tree.largeMax, L * DIMS, best) >= best) continue;
+    const sEnd = Math.min(Math.ceil(N / tree.small), ((L + 1) * tree.large) / tree.small);
+    for (let S = (L * tree.large) / tree.small; S < sEnd; S++) {
+      if (boxBound(q, w, tree.smallMin, tree.smallMax, S * DIMS, best) >= best) continue;
+      const fEnd = Math.min(N, (S + 1) * tree.small);
+      for (let f = S * tree.small; f < fEnd; f++) {
+        if (!mf.matchable[f]) continue;
+        evaluated++;
+        const o = f * DIMS;
+        let c = 0;
+        for (let d = 0; d < DIMS; d++) {
+          const e = q[d] - F[o + d];
+          c += w[d] * e * e;
+          if (c >= best) break;
+        }
+        if (c < best) {
+          best = c;
+          bestFrame = f;
+        }
+      }
+    }
+  }
+  aabbEvaluated = evaluated;
+  out.frame = bestFrame;
+  out.cost = best;
+  return out;
+}

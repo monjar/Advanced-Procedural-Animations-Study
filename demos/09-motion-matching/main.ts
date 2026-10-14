@@ -3,7 +3,7 @@ import { createApp } from '../../src/core/app';
 import { createFollow } from '../../src/core/follow';
 import { addSimulationFolder, createPane } from '../../src/core/gui';
 import { parseMotionDB } from '../../src/anim/mmdb';
-import { buildFeatures, GROUPS, TRAJ_FRAMES } from '../../src/anim/mmfeatures';
+import { aabbEvaluated, buildFeatures, GROUPS, searchAABB, searchBrute, TRAJ_FRAMES } from '../../src/anim/mmfeatures';
 import { readGamepad } from '../../src/input/gamepad';
 import { Keyboard } from '../../src/input/keyboard';
 import { SegmentBatch } from '../../src/rig/segments';
@@ -26,7 +26,7 @@ frame.attach(app);
 const buffer = await (await fetch(new URL('../../assets/mocap/cmu16-mm.bin', document.baseURI))).arrayBuffer();
 const db = parseMotionDB(buffer);
 const mf = buildFeatures(db);
-const matcher = new MotionMatcher(mf);
+const matcher = new MotionMatcher(mf, { search: searchAABB });
 
 const LEFT = 0xff8a3d;
 const RIGHT = 0x5fb3ff;
@@ -34,7 +34,7 @@ const BODY = 0xd5d9e0;
 const DESIRED = 0xffd166;
 const MATCHED = 0x7ee0a1;
 
-const view = { trajectories: true, follow: true, autopilot: true };
+const view = { trajectories: true, follow: true, autopilot: true, search: 'aabb' as 'aabb' | 'brute' };
 
 // ---------------------------------------------------------------------------
 // Input: keyboard / gamepad relative to the camera, or a looping autopilot.
@@ -172,7 +172,7 @@ app.onFrame((_alpha, frameDt) => {
       `        ${t.description}\n` +
       `frame   ${matcher.frame - t.start} / ${t.frames}\n` +
       `cost    continue ${fmt(matcher.currentCost)} · best ${fmt(matcher.bestCost)}\n` +
-      `search  ${searchMs.toFixed(2)} ms · ${candidates} candidates\n` +
+      `search  ${searchMs.toFixed(2)} ms · ${view.search === 'aabb' ? `${aabbEvaluated} of ` : ''}${candidates} frames\n` +
       `switch  ${matcher.transitions} (${(matcher.transitions / Math.max(1, matcher.time)).toFixed(1)}/s)\n` +
       `speed   ${speed.toFixed(2)} m/s${view.autopilot ? ' · autopilot' : ''}`;
     drawTimeline(timeline, db, matcher.frame);
@@ -207,6 +207,9 @@ control.addBinding(matcher.controller, 'facingHalflife', { label: 'facing ½-lif
 
 const search = pane.addFolder({ title: 'Search' });
 search.addBinding(matcher.settings, 'searchInterval', { label: 'every (frames)', min: 1, max: 30, step: 1 });
+search
+  .addBinding(view, 'search', { label: 'method', options: { 'AABB (exact)': 'aabb', 'brute force': 'brute' } })
+  .on('change', () => (matcher.settings.search = view.search === 'aabb' ? searchAABB : searchBrute));
 const weights = Object.fromEntries(GROUPS.map((g, i) => [g.name, matcher.settings.weights[i]]));
 for (const g of GROUPS) {
   search.addBinding(weights, g.name, { min: 0, max: 3, step: 0.05 }).on('change', () => matcher.setWeights(GROUPS.map((x) => weights[x.name])));
