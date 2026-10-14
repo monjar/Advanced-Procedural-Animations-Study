@@ -56,7 +56,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Procedural Locomotion',
     summary: 'Terrain-adaptive spider gait with raycast foot placement and wall-to-ceiling transitions.',
     tags: ['gait', 'foot placement', 'raycast'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '06',

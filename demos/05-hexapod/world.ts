@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { hills, terrainMesh, type HeightFn } from '../../src/world/terrain';
+import { hills, terrainGrid, terrainMesh, type HeightFn } from '../../src/world/terrain';
 import { StaticRaycaster } from '../../src/world/raycast';
 
 export type WorldKind = 'playground' | 'flat' | 'wall';
@@ -16,11 +16,12 @@ export class World {
       this.height,
       kind === 'playground' ? 44 : 30,
       kind === 'playground' ? 176 : 8,
-      new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.95 }),
+      new THREE.MeshStandardMaterial({ color: 0x30353f, roughness: 0.95 }),
     );
     this.addMesh(ground);
+    this.group.add(terrainGrid(this.height, kind === 'playground' ? 44 : 30, 1, 0x3f4552));
 
-    const crate = new THREE.MeshStandardMaterial({ color: 0x4a505c, roughness: 0.8 });
+    const crate = new THREE.MeshStandardMaterial({ color: 0x59606d, roughness: 0.8 });
     const accent = new THREE.MeshStandardMaterial({ color: 0x3d4f66, roughness: 0.7 });
     if (kind === 'wall') {
       this.box(0, 0, -3, 6, 3, 0.6, crate);
