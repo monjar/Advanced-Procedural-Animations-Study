@@ -6,7 +6,7 @@ import { createDemoFrame } from '../../src/ui/demoFrame';
 import { SecondOrderVec3, stepResponse, type Integrator, type SecondOrderParams } from '../../src/math/secondOrder';
 import { criticalSpringVec3 } from '../../src/math/spring';
 import { Critter, type CritterSettings } from './critter';
-import { ResponsePlot } from './plot';
+import { LinePlot } from '../../src/ui/plot';
 import writeup from './README.md?raw';
 
 const frame = createDemoFrame({
@@ -214,7 +214,13 @@ app.onFrame(() => {
 // Step-response plot
 
 const plotBody = frame.addPanel('Step response');
-const plot = new ResponsePlot(plotBody);
+const plot = new LinePlot(plotBody, {
+  yMin: -0.5,
+  yMax: 2,
+  yTicks: [0, 1],
+  xTickStep: 1,
+  formatX: (x) => `${x}s`,
+});
 const legend = document.createElement('div');
 plotBody.appendChild(legend);
 
@@ -233,8 +239,8 @@ function redrawPlot(): void {
   }
   plot.draw(
     [
-      { values: reference, dt: 1 / 1000, color: '#8b929c', dashed: true },
-      { values: actual, dt, color: `#${f.color.toString(16).padStart(6, '0')}` },
+      { values: reference, dx: 1 / 1000, color: '#8b929c', dashed: true },
+      { values: actual, dx: dt, color: `#${f.color.toString(16).padStart(6, '0')}` },
     ],
     duration,
   );

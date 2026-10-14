@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { FixedStepLoop } from './loop';
 import { DebugDraw } from './debugDraw';
 
@@ -24,6 +25,11 @@ export interface App {
   readonly loop: FixedStepLoop;
   /** Immediate-mode debug lines/points. Draw from `onFrame` callbacks. */
   readonly debug: DebugDraw;
+  readonly sun: THREE.DirectionalLight;
+  /** Attach a text label to `parent` at a local `offset`. */
+  label(text: string, parent: THREE.Object3D, offset?: THREE.Vector3Tuple, className?: string): CSS2DObject;
+  /** Centre the shadow camera on `p` (for scenes where the subject travels). */
+  focusShadow(p: THREE.Vector3): void;
   onFixedUpdate(fn: FixedFn): void;
   onFrame(fn: FrameFn): void;
   render(): void;
@@ -88,10 +94,22 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
   const debug = new DebugDraw();
   scene.add(debug);
 
+  const labels = new CSS2DRenderer();
+  labels.domElement.style.position = 'absolute';
+  labels.domElement.style.inset = '0';
+  labels.domElement.style.pointerEvents = 'none';
+  container.appendChild(labels.domElement);
+
+  const sunOffset = sun.position.clone();
+  scene.add(sun.target);
+
   const fixedFns: FixedFn[] = [];
   const frameFns: FrameFn[] = [];
 
-  const render = () => renderer.render(scene, camera);
+  const render = () => {
+    renderer.render(scene, camera);
+    labels.render(scene, camera);
+  };
 
   const loop = new FixedStepLoop(
     {
@@ -118,6 +136,7 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
     renderer.setSize(w, h, false);
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
+    labels.setSize(w, h);
     camera.aspect = w / h;
     // Portrait screens: widen the vertical fov so the horizontal fov never drops below MIN_HFOV.
     const fitFov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(MIN_HFOV / 2) / camera.aspect));
@@ -140,6 +159,20 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
     controls,
     loop,
     debug,
+    sun,
+    label: (text, parent, offset = [0, 0, 0], className = 'scene-label') => {
+      const div = document.createElement('div');
+      div.className = className;
+      div.textContent = text;
+      const obj = new CSS2DObject(div);
+      obj.position.set(...offset);
+      parent.add(obj);
+      return obj;
+    },
+    focusShadow: (p) => {
+      sun.target.position.copy(p);
+      sun.position.copy(p).add(sunOffset);
+    },
     onFixedUpdate: (fn) => fixedFns.push(fn),
     onFrame: (fn) => frameFns.push(fn),
     render,
@@ -155,6 +188,7 @@ export function createApp(container: HTMLElement, options: AppOptions = {}): App
       controls.dispose();
       renderer.dispose();
       renderer.domElement.remove();
+      labels.domElement.remove();
     },
   };
   // Exposed for automated smoke tests and console debugging.
