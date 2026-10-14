@@ -18,10 +18,15 @@ write-up. The full list, techniques and references are in [ROADMAP.md](ROADMAP.m
 | 06 | [Procedural Quadruped](demos/06-quadruped/README.md) | Hildebrand gait table, continuous walk/trot/canter/gallop blending, digitigrade legs |
 | 07 | [Procedural Biped](demos/07-biped/README.md) | Overgrowth-style key poses on a stride wheel, planted feet, springs |
 | 08 | [Foot IK over Mocap](demos/08-foot-ik/README.md) | CMU walk on stairs and slopes: pelvis adjust, foot-flat locking, IK on the skeleton |
-| 09–15 | Motion matching, active ragdoll, GPU crowds, evolved creatures, RL, LLM-directed animation, face | see [ROADMAP.md](ROADMAP.md) |
+| 09 | [Motion Matching](demos/09-motion-matching/README.md) | CMU subject 16 database, exact AABB search, spring trajectories, inertialization, foot locking |
+| 10 | [Active Ragdoll](demos/10-active-ragdoll/README.md) | Rapier capsules, joint-motor muscles, PuppetMaster pins, hits, falls and recovery |
+| 11 | [GPU Procedural Crowds](demos/11-gpu-crowds/README.md) | WebGL2 GPGPU boids with a bitonic-sorted grid, verified against a CPU reference; swimming in the vertex shader |
+| 12 | [Evolved Virtual Creatures](demos/12-evolved-creatures/README.md) | Sims-style body plans and oscillator brains, GA across Web Workers, deterministic replays |
+| 13–15 | RL locomotion, LLM-directed animation, procedural face | see [ROADMAP.md](ROADMAP.md) |
 
-The locomotion studies are tested headlessly, not only eyeballed: the hexapod's wall traversal, the
-quadruped's gait blending and reach, the biped's stance phases and the mocap foot-contact error are all unit
+The studies are tested headlessly, not only eyeballed: the hexapod's wall traversal, the quadruped's gait
+blending, the mocap foot penetration, motion matching under scripted input, the ragdoll's hit recovery, the GPU
+boids against a CPU reference and the evolved creatures' determinism are all checked by unit or browser
 tests.
 
 ## Run locally
@@ -41,17 +46,21 @@ index.html, src/gallery.ts   gallery page
 src/core/                    app shell: renderer, fixed-timestep loop, debug draw, Tweakpane helpers, camera follow
 src/math/                    second-order dynamics, exact springs, quaternion utilities, noise
 src/ik/                      two-bone, CCD, FABRIK (chain + tree), Jacobian solvers
-src/physics/                 XPBD particle solver
+src/physics/                 XPBD particle solver, Rapier helpers (init, motor driver, fixed stepper)
+src/gpu/                     WebGL2 GPGPU passes, bitonic sort, boids CPU reference
 src/rig/                     instanced segment rendering, spring chains
-src/anim/                    clip player with root motion
+src/anim/                    clip player, motion database + features + search, FK, inertialization
 src/world/                   height fields, BVH raycasting
-src/input/                   keyboard state
+src/input/                   keyboard and gamepad state
 src/ui/                      demo page frame, plots, footfall chart
 src/demos.ts                 study registry (drives the gallery)
 demos/NN-slug/               one page per study: index.html, main.ts, README.md (the write-up)
 tests/unit, tests/e2e        vitest and playwright suites
 tools/bvh-to-clip.mjs        CMU BVH → loopable JSON clip (contacts, loop fix, root motion)
+tools/fetch-cmu16.sh, tools/build-mm-db.mjs   CMU subject 16 → motion-matching database
+tools/evolve.ts              offline evolution of the study 12 champions (node --experimental-transform-types)
 public/assets/mocap/         converted motion capture (CMU, with attribution)
+public/assets/creatures/     evolved champions
 ```
 
 Adding a study: create `demos/NN-slug/` with `index.html` + `main.ts` + `README.md`, register it in
