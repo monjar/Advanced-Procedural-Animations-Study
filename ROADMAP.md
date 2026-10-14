@@ -14,10 +14,10 @@ technical write-up.
 | 06 | Procedural Quadruped                     | Locomotion    | 05          | live    |
 | 07 | Procedural Biped (Overgrowth-style)      | Locomotion    | 01, 02      | live    |
 | 08 | Foot IK & Ground Adaptation over Mocap   | Locomotion    | 02, 07      | live    |
-| 09 | Motion Matching + Inertialization        | Data-driven   | 08          | planned |
-| 10 | Active Ragdoll                           | Physics       | 02, 08      | planned |
-| 11 | GPU Procedural Crowds                    | Physics / GPU | 01          | planned |
-| 12 | Evolved Virtual Creatures                | Physics       | 10          | planned |
+| 09 | Motion Matching + Inertialization        | Data-driven   | 08          | live    |
+| 10 | Active Ragdoll                           | Physics       | 02, 08      | live    |
+| 11 | GPU Procedural Crowds                    | Physics / GPU | 01          | live    |
+| 12 | Evolved Virtual Creatures                | Physics       | 10          | live    |
 | 13 | RL Locomotion Policy                     | Learned       | 10          | planned |
 | 14 | LLM-Directed Animation                   | Learned       | 02–07       | planned |
 | 15 | Procedural Face (stretch)                | Expressive    | 01, 02      | planned |
@@ -93,32 +93,44 @@ technical write-up.
 ## Tier 3 — Data-Driven
 
 ### 09 · Motion Matching + Inertialization
-- **Techniques:** offline pipeline in `tools/` (BVH → binary pose DB + normalised feature vectors: future trajectory
-  positions/directions, foot positions/velocities, hip velocity); runtime nearest-neighbour search (brute force, then KD /
-  AABB acceleration); inertialized transitions; spring-based trajectory prediction from gamepad/keyboard.
-- **Data:** CMU Graphics Lab Motion Capture Database — free incl. commercial use, attribution required, no resale.
-- **Done when:** responsive control at 60 fps with visible candidate-match debug overlay.
+- **Built:** `tools/build-mm-db.mjs` packs 49 locomotion takes + idle of CMU subject 16 (117 s, 1.2 MB,
+  quaternions in 16 bits, marker spikes removed); mirroring, simulation bone and 27-D features (trajectory
+  +10/20/30 frames, feet, hips) are computed at load. Exact brute-force and AABB search, Holden-style spring
+  trajectories, offset inertialization, path adjustment and clamping, foot-flat locking with two-bone IK.
+- **Measured:** walk/run command speeds within 0.03 m/s, 90° turn in 0.45 s, stop in 0.73 s; inertialized
+  switches no rougher than the data (worst 15° vs 78° for hard cuts); identical at 25/60/144 fps.
+- **Deviation:** 0.5 s trajectory horizon (CMU takes are 1–4 s long); no strafing (no data).
 - **References:** S. Clavet, *Motion Matching and The Road to Next-Gen Animation* (GDC 2016);
   D. Bollo, *Inertialization* (GDC 2018); D. Holden et al., *Learned Motion Matching* (SIGGRAPH 2020).
-- **Risk:** retargeting the CMU skeleton and producing clean contact labels is the bulk of the work.
 
 ## Tier 4 — Physics-Based
 
 ### 10 · Active Ragdoll
-- **Techniques:** Rapier articulated body; PD joint control tracking a kinematic pose; CoM-over-support balance;
-  hit reactions with blend back to kinematic.
-- **References:** K. Yin, K. Loken, M. van de Panne, *SIMBICON* (2007);
-  T. Geijtenbeek & N. Pronost, *Interactive Character Animation Using Simulated Physics* (2012).
-- **Risk:** tuning-bound; may require custom PD and substepping beyond Rapier defaults.
+- **Built:** 14 Rapier capsules (de Leva masses) following the CMU walk; muscles are implicit joint motors
+  (gains from the weight each joint holds), PuppetMaster-style pins with pin power, hit unpinning with falloff,
+  fall / limp / recover state machine.
+- **Deviation:** a *pinned* ragdoll, not a SIMBICON walker — balance comes from the pins (decided up front;
+  physically valid balance is study 13's job).
+- **Measured:** stands within 1.1° / 1.1 cm, walks within 5.6° / 2.6 cm; falls in 1.3 s without pins; a
+  120 N·s shove staggers it 18 cm and it recovers in 0.3 s; 250 N·s knocks it down and it gets back up.
+- **References:** PuppetMaster docs; T. Geijtenbeek & N. Pronost, *Interactive Character Animation Using
+  Simulated Physics* (2012); K. Yin et al., *SIMBICON* (2007).
 
-### 11 · GPU Procedural Crowds (Fish / Birds)
-- **Techniques:** boids on the GPU (WebGPU compute via TSL, GPGPU texture fallback); swim undulation in the vertex
-  shader (travelling sine along the spine, amplitude proportional to speed); 10k+ instances.
+### 11 · GPU Procedural Crowds (Fish)
+- **Built:** boids on **WebGL2 GPGPU** (decided instead of WebGPU: one code path that runs in every browser and
+  in CI): key pass, bitonic sort of (cell, index), binary-search cell ranges, capped 27-cell neighbour
+  update writing two render targets; instanced fish with a travelling swim wave in the vertex shader.
+- **Measured:** an end-to-end test reads the textures back and matches a CPU reference exactly (sort, cell
+  table, neighbour counts; positions within 2 µm after a step) at 1 024 and 16 384 boids.
+- **Not done:** birds mode; GPU frame timings (CI renders in software).
 - **References:** C. Reynolds, *Flocks, Herds, and Schools* (SIGGRAPH 1987).
 
 ### 12 · Evolved Virtual Creatures
-- **Techniques:** genome = morphology graph + oscillator / small-NN controller; genetic algorithm in Web Workers
-  with Rapier; live fitness chart; save/load champions.
+- **Built:** tree genomes of hinged boxes with per-joint oscillators and mirrored limbs; Rapier phenotypes
+  with cross-section-limited torque and exploit guards; generational GA across a worker pool; recorded
+  playback; shipped champions evolved offline by `tools/evolve.ts`; save/load/export.
+- **Measured:** deterministic — shipped champions re-simulate to their exact fitness in Node and in a browser
+  worker; evolution improves ≥ 1.5× in 6 generations.
 - **References:** K. Sims, *Evolving Virtual Creatures* (SIGGRAPH 1994).
 
 ## Tier 5 — Learned

@@ -1,30 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { ClipPlayer, type ClipData } from '../../src/anim/clip';
-import { FootIK } from '../../demos/08-foot-ik/footik';
-import { courseHeight, courseNormal, COURSE_LENGTH } from '../../demos/08-foot-ik/course';
-
-const data = JSON.parse(readFileSync('public/assets/mocap/cmu-02_01-walk.json', 'utf8')) as ClipData;
-
-function walkCourse(enabled: boolean) {
-  const player = new ClipPlayer(data);
-  const ik = new FootIK(player, courseHeight, courseNormal, { enabled, pelvis: true, lock: true, align: true, swing: true });
-  const stats = { maxError: 0, maxReach: 0, maxSlip: 0, maxRawError: 0, flatFrames: 0 };
-  for (let i = 0; i < 60 * 30; i++) {
-    player.time += 1 / 60;
-    ik.update(1 / 60);
-    if (player.bones[0].position.z > COURSE_LENGTH) break;
-    for (const f of ik.feet) {
-      stats.maxReach = Math.max(stats.maxReach, enabled ? f.ik.error : 0);
-      if (!f.flat) continue;
-      stats.flatFrames++;
-      stats.maxError = Math.max(stats.maxError, f.ikError);
-      stats.maxRawError = Math.max(stats.maxRawError, f.rawError);
-      stats.maxSlip = Math.max(stats.maxSlip, f.lastSlip.ik);
-    }
-  }
-  return stats;
-}
+import { auditCourse, clip as data } from '../support/footikAudit';
 
 describe('CMU clip asset', () => {
   it('is a single loop with unit quaternions and both feet stepping', () => {
@@ -44,17 +19,36 @@ describe('CMU clip asset', () => {
 });
 
 describe('Foot IK over mocap on the obstacle course', () => {
-  it('without IK the clip penetrates or floats by over a metre on stairs', () => {
-    const s = walkCourse(false);
-    expect(s.maxError).toBeGreaterThan(1);
+  // Penetration is measured exactly against the rendered course mesh, independent of the layer's own query.
+  it('without IK the clip sinks over a metre into the stairs', () => {
+    const raw = auditCourse({ enabled: false });
+    expect(raw.stance).toBeGreaterThan(1);
+    expect(raw.deepFrames / raw.frames).toBeGreaterThan(0.5);
   });
 
-  it('with IK, flat feet stay within 2 cm of the supporting surface, reachable and pinned', () => {
-    const s = walkCourse(true);
-    expect(s.flatFrames).toBeGreaterThan(500);
-    expect(s.maxError).toBeLessThan(0.02);
-    expect(s.maxReach).toBeLessThan(1e-3);
-    expect(s.maxSlip).toBeLessThan(0.02);
-    expect(s.maxRawError).toBeGreaterThan(1);
+  for (const fps of [25, 60, 144]) {
+    it(`with IK at ${fps} fps the rendered feet and shins stay out of the course`, () => {
+      const a = auditCourse({}, fps);
+      expect(a.stance).toBeLessThan(0.005);
+      expect(a.swing).toBeLessThan(0.005);
+      expect(a.shin).toBeLessThan(0.005);
+      expect(a.deepFrames).toBe(0);
+      // The plan, not the last-resort guard, does the work.
+      expect(a.guard).toBeLessThan(0.01);
+    });
+  }
+
+  it('planted feet stand on the course rather than hovering, and stay pinned', () => {
+    const a = auditCourse();
+    expect(a.flatFrames).toBeGreaterThan(800);
+    expect(a.floatFrames / a.flatFrames).toBeLessThan(0.03);
+    expect(a.slip).toBeLessThan(0.025);
+  });
+
+  it('planned heights are smooth; reacting frame by frame is not', () => {
+    const planned = auditCourse();
+    const reactive = auditCourse({ swing: false });
+    expect(planned.accel).toBeLessThan(100);
+    expect(reactive.accel).toBeGreaterThan(300);
   });
 });

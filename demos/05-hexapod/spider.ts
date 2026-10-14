@@ -51,6 +51,32 @@ const GAITS: Record<Gait, number[][]> = {
 };
 
 export const COXA = 0.1;
+/** Radius of the rendered foot tip; footholds sit this far off the surface along its normal. */
+export const FOOT_RADIUS = 0.022;
+
+/** Points on an ellipsoid (body frame): the bottom, a ring below the equator and the equator. */
+function ellipsoidSamples(c: THREE.Vector3Tuple, r: THREE.Vector3Tuple): THREE.Vector3[] {
+  const pts = [new THREE.Vector3(c[0], c[1] - r[1], c[2])];
+  for (const lat of [-0.75, 0]) {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      pts.push(new THREE.Vector3(c[0] + Math.cos(lat) * Math.cos(a) * r[0], c[1] + Math.sin(lat) * r[1], c[2] + Math.cos(lat) * Math.sin(a) * r[2]));
+    }
+  }
+  return pts;
+}
+
+/**
+ * Body-frame sample points on the thorax, abdomen and head (matching the rendered ellipsoids) and the hip
+ * sockets, kept out of the level geometry by the clearance pass.
+ */
+const BODY_SAMPLES = [
+  ...ellipsoidSamples([0, 0, 0], [0.22, 0.11, 0.3]),
+  ...ellipsoidSamples([0, 0.1, -0.52], [0.27, 0.22, 0.36]),
+  ...ellipsoidSamples([0, 0.03, 0.3], [0.11, 0.11, 0.11]),
+  new THREE.Vector3(0, 0.28, -0.6),
+  ...[0.26, 0, -0.26].flatMap((z) => [new THREE.Vector3(0.27, 0.02, z), new THREE.Vector3(-0.27, 0.02, z)]),
+];
 export const FEMUR = 0.42;
 export const TIBIA = 0.55;
 
@@ -65,6 +91,10 @@ export interface Leg {
   foot: THREE.Vector3;
   /** Where the foot wants to be (world, from raycasts). */
   target: THREE.Vector3;
+  /** Surface normal at the target / planted foothold / landing point. */
+  targetNormal: THREE.Vector3;
+  plantedNormal: THREE.Vector3;
+  toNormal: THREE.Vector3;
   targetFound: boolean;
   stepping: boolean;
   t: number;
@@ -72,6 +102,7 @@ export interface Leg {
   from: THREE.Vector3;
   to: THREE.Vector3;
   liftAxis: THREE.Vector3;
+  fromNormal: THREE.Vector3;
   hip: THREE.Vector3;
   ik: TwoBoneResult;
   /** Which raycast found the target: 0 hip→home (wall), 1 down, 2 under-edge, -1 none. */
@@ -83,6 +114,10 @@ const _w = new THREE.Vector3();
 const _q = new THREE.Quaternion();
 const _m = new THREE.Matrix4();
 const _dn = new THREE.Vector3();
+const _hip = new THREE.Vector3();
+const _vis = new THREE.Vector3();
+const _n = new THREE.Vector3();
+const _c = new THREE.Vector3();
 const _hit: Hit = { point: new THREE.Vector3(), normal: new THREE.Vector3(), distance: 0 };
 
 /**
@@ -121,6 +156,9 @@ export class Spider {
         planted: new THREE.Vector3(),
         foot: new THREE.Vector3(),
         target: new THREE.Vector3(),
+        targetNormal: new THREE.Vector3(0, 1, 0),
+        plantedNormal: new THREE.Vector3(0, 1, 0),
+        toNormal: new THREE.Vector3(0, 1, 0),
         targetFound: false,
         stepping: false,
         t: 0,
@@ -128,6 +166,7 @@ export class Spider {
         from: new THREE.Vector3(),
         to: new THREE.Vector3(),
         liftAxis: new THREE.Vector3(),
+        fromNormal: new THREE.Vector3(0, 1, 0),
         hip: new THREE.Vector3(),
         ik: createTwoBoneResult(),
         probe: -1,
@@ -148,6 +187,7 @@ export class Spider {
     for (const leg of this.legs) {
       this.findTarget(leg, false);
       leg.planted.copy(leg.target);
+      leg.plantedNormal.copy(leg.targetNormal);
       leg.foot.copy(leg.target);
       leg.stepping = false;
     }
@@ -189,16 +229,18 @@ export class Spider {
     this.advanceSteps(dt);
     this.chooseSteps();
 
-    // --- Body orientation and height.
+    // --- Body orientation and height, then keep the body out of the geometry.
     this.orientBody(dt);
     this.updateQuaternion();
+    this.clearBody();
 
-    // --- Leg IK (hip → knee → foot), knees up and out.
+    // --- Leg IK (hip → knee → foot), knees up, out and away from the foothold's surface.
     for (const leg of this.legs) {
       this.toWorld(_v.copy(leg.hipLocal).setX(leg.hipLocal.x + leg.side * COXA), leg.hip);
       const pole = _w.copy(leg.hip).addScaledVector(this.up, 0.9);
       this.toWorld(_v.set(leg.side * 0.4, 0, 0).add(leg.hipLocal), _v);
       pole.add(_v.sub(this.position).multiplyScalar(0.6));
+      pole.addScaledVector(leg.stepping ? leg.toNormal : leg.plantedNormal, 0.5);
       solveTwoBone(leg.hip, leg.foot, pole, FEMUR, TIBIA, { softness: 0.04 }, leg.ik);
     }
   }
@@ -207,29 +249,43 @@ export class Spider {
     const home = this.toWorld(leg.homeLocal, leg.target);
     home.addScaledVector(this.up, -this.settings.bodyHeight);
     if (predict) home.addScaledVector(this.velocity, this.stepDuration() * this.settings.overshoot);
-    const hip = this.toWorld(leg.hipLocal, _v);
+    const hip = this.toWorld(leg.hipLocal, _hip);
 
-    // 1) hip → home: a wall between the hip and the home point.
+    // 1) hip → home: a wall between the hip and the home point (visible from the hip by construction).
     _w.subVectors(home, hip);
     const len = _w.length();
     let hit = this.rays.cast(hip, _w.divideScalar(len), len + 0.05, _hit);
-    leg.probe = 0;
+    leg.probe = hit ? 0 : -1;
     // 2) straight down (body frame) through the home point.
     if (!hit) {
-      leg.probe = 1;
-      hit = this.rays.cast(_v.copy(home).addScaledVector(this.up, 0.7), _w.copy(this.up).negate(), 1.5, _hit);
+      hit = this.unburied(this.rays.cast(_v.copy(home).addScaledVector(this.up, 0.7), _w.copy(this.up).negate(), 1.5, _hit));
+      if (hit) leg.probe = 1;
     }
     // 3) from below the home point back toward the body: wraps over convex edges.
     if (!hit) {
-      leg.probe = 2;
       const from = _v.copy(home).addScaledVector(this.up, -0.8);
       _w.copy(this.position).addScaledVector(this.up, -0.8).sub(from);
       const l = _w.length();
-      hit = this.rays.cast(from, _w.divideScalar(l), l, _hit);
+      hit = this.unburied(this.rays.cast(from, _w.divideScalar(l), l, _hit));
+      if (hit) leg.probe = 2;
     }
     leg.targetFound = !!hit;
-    if (hit) leg.target.copy(hit.point);
-    else leg.probe = -1;
+    if (hit) {
+      // Rest the foot tip on the surface, not half inside it.
+      leg.target.copy(hit.point).addScaledVector(hit.normal, FOOT_RADIUS);
+      leg.targetNormal.copy(hit.normal);
+    }
+  }
+
+  /**
+   * Reject footholds on faces buried inside other geometry. Probes 2 and 3 start away from the body and can
+   * begin inside a solid (a crate sunk into the terrain, a ramp end inside its platform); a short ray out of
+   * a buried foothold along its normal meets the back of the enclosing solid's face first.
+   */
+  private unburied(hit: Hit | null): Hit | null {
+    if (!hit) return null;
+    _vis.copy(hit.point).addScaledVector(hit.normal, 0.005);
+    return this.rays.insideAlong(_vis, hit.normal, 3) ? null : hit;
   }
 
   private stepDuration(): number {
@@ -245,15 +301,44 @@ export class Spider {
         continue;
       }
       // Track the moving target while in the air so fast turns do not leave feet behind.
-      if (leg.targetFound) leg.to.lerp(leg.target, 1 - Math.exp(-dt * 10));
+      if (leg.targetFound) {
+        const k = 1 - Math.exp(-dt * 20);
+        leg.to.lerp(leg.target, k);
+        leg.toNormal.lerp(leg.targetNormal, k).normalize();
+      }
       leg.t = Math.min(1, leg.t + dt / leg.duration);
       const s = leg.t * leg.t * (3 - 2 * leg.t);
-      leg.foot.lerpVectors(leg.from, leg.to, s);
-      const lift = this.settings.stepHeight * Math.min(1, leg.from.distanceTo(leg.to) / 0.25 + 0.3);
-      leg.foot.addScaledVector(leg.liftAxis, Math.sin(Math.PI * leg.t) * lift);
+      // Quadratic Bézier bulging along the mean of the take-off and landing normals: across an inner
+      // corner (floor → wall) or a convex edge it arcs away from the edge instead of cutting through it.
+      const n = _n.addVectors(leg.fromNormal, leg.toNormal);
+      if (n.lengthSq() < 1e-4) n.copy(leg.liftAxis);
+      n.normalize();
+      const turnAround = 1 - leg.fromNormal.dot(leg.toNormal); // 0 on a plane, 1 at a right angle
+      const lift = this.settings.stepHeight * Math.min(1, leg.from.distanceTo(leg.to) / 0.25 + 0.3) + 0.12 * turnAround;
+      _c.addVectors(leg.from, leg.to).multiplyScalar(0.5).addScaledVector(n, 2 * lift);
+      const u = 1 - s;
+      leg.foot
+        .copy(leg.from)
+        .multiplyScalar(u * u)
+        .addScaledVector(_c, 2 * u * s)
+        .addScaledVector(leg.to, s * s);
+      // Never leave the swinging foot behind a surface (seen from the hip).
+      _w.subVectors(leg.foot, leg.hip);
+      const len = _w.length();
+      if (len > 1e-4) {
+        const hit = this.rays.cast(leg.hip, _w.divideScalar(len), len, _hit);
+        if (hit) leg.foot.copy(hit.point).addScaledVector(hit.normal, FOOT_RADIUS);
+      }
       if (leg.t >= 1) {
+        // Land on the actual foothold: the smoothed landing point can cut through a corner when the
+        // target switches surfaces mid-swing.
+        if (leg.targetFound) {
+          leg.to.copy(leg.target);
+          leg.toNormal.copy(leg.targetNormal);
+        }
         leg.stepping = false;
         leg.planted.copy(leg.to);
+        leg.plantedNormal.copy(leg.toNormal);
         leg.foot.copy(leg.to);
       }
     }
@@ -265,8 +350,11 @@ export class Spider {
     const anyStepping = this.legs.some((l) => l.stepping);
     const dist = (l: Leg) => (l.targetFound ? l.planted.distanceTo(l.target) : 0);
 
-    // Emergency: a foot far beyond its threshold steps regardless of the gait.
-    for (const leg of this.legs) if (!leg.stepping && dist(leg) > threshold * 2.4) this.startStep(leg);
+    // Emergency: a foot far beyond its threshold, or out of the leg's reach, steps regardless of the gait.
+    for (const leg of this.legs) {
+      const outOfReach = leg.hip.distanceTo(leg.planted) > (FEMUR + TIBIA) * 0.98;
+      if (!leg.stepping && (dist(leg) > threshold * 2.4 || (outOfReach && leg.targetFound))) this.startStep(leg);
+    }
     if (anyStepping) return;
 
     let best = -1;
@@ -290,21 +378,25 @@ export class Spider {
     leg.t = 0;
     leg.duration = this.stepDuration();
     leg.from.copy(leg.planted);
+    leg.fromNormal.copy(leg.plantedNormal);
     leg.to.copy(leg.target);
+    leg.toNormal.copy(leg.targetNormal);
     leg.liftAxis.copy(this.up);
   }
 
   private orientBody(dt: number): void {
-    // Plane through the feet: sum of cross products around the ordered foot loop.
+    // Plane through the footholds (planted feet, and landing points of swinging feet — not their arcs,
+    // which would tilt the body every step): sum of cross products around the ordered foot loop.
+    const hold = (leg: Leg) => (leg.stepping ? leg.to : leg.planted);
     const c = _v.set(0, 0, 0);
-    for (const leg of this.legs) c.add(leg.foot);
+    for (const leg of this.legs) c.add(hold(leg));
     c.divideScalar(this.legs.length);
     const n = _w.set(0, 0, 0);
     const a = new THREE.Vector3();
     const b = new THREE.Vector3();
     for (let i = 0; i < this.legs.length; i++) {
-      a.subVectors(this.legs[i].foot, c);
-      b.subVectors(this.legs[(i + 1) % this.legs.length].foot, c);
+      a.subVectors(hold(this.legs[i]), c);
+      b.subVectors(hold(this.legs[(i + 1) % this.legs.length]), c);
       n.add(a.cross(b));
     }
     if (n.dot(this.up) < 0) n.negate();
@@ -350,6 +442,32 @@ export class Spider {
     const lifting = this.legs.filter((l) => l.stepping).length / this.legs.length;
     error -= lifting * 0.03;
     this.position.addScaledVector(this.up, error * Math.min(1, dt * 10));
+  }
+
+  /**
+   * Cast from the body centre to each body sample point; a hit before the point means that part of
+   * the body is behind a surface, so push the body out along the surface normal. Two passes settle
+   * corners where two surfaces push.
+   */
+  private clearBody(): void {
+    const centre = _c;
+    for (let pass = 0; pass < 2; pass++) {
+      let moved = false;
+      for (const local of BODY_SAMPLES) {
+        centre.copy(this.position);
+        const p = _v.copy(local).applyQuaternion(this.quaternion).add(this.position);
+        _w.subVectors(p, centre);
+        const len = _w.length();
+        const hit = this.rays.cast(centre, _w.divideScalar(len), len, _hit);
+        if (!hit) continue;
+        const depth = _w.subVectors(hit.point, p).dot(hit.normal) + 0.015;
+        if (depth > 0) {
+          this.position.addScaledVector(hit.normal, depth);
+          moved = true;
+        }
+      }
+      if (!moved) break;
+    }
   }
 
   private updateQuaternion(): void {

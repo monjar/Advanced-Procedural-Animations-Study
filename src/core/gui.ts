@@ -10,7 +10,7 @@ export function createPane(container: HTMLElement, title = 'Controls'): Pane {
 }
 
 /**
- * Standard "Simulation" folder: fps graph, pause, time scale and fixed step rate.
+ * Standard "Simulation" folder: fps graph, pause, time scale, step mode and step rate.
  * Returns hooks to bracket each rendered frame for the fps measurement.
  */
 export function addSimulationFolder(pane: Pane, loop: FixedStepLoop, rates = [30, 60, 120, 240]) {
@@ -19,9 +19,13 @@ export function addSimulationFolder(pane: Pane, loop: FixedStepLoop, rates = [30
   const params = { rate: Math.round(loop.rate) };
   folder.addBinding(loop, 'paused');
   folder.addBinding(loop, 'timeScale', { min: 0, max: 2, step: 0.05, label: 'time scale' });
+  folder.addBinding(loop, 'mode', {
+    label: 'timestep',
+    options: { 'synced to display': 'synced', 'fixed (judders)': 'fixed' },
+  });
   folder
     .addBinding(params, 'rate', {
-      label: 'sim rate (Hz)',
+      label: 'step rate (Hz)',
       options: Object.fromEntries(rates.map((r) => [String(r), r])),
     })
     .on('change', (ev) => (loop.rate = ev.value));

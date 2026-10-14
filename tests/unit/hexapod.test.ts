@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { World } from '../../demos/05-hexapod/world';
-import { Spider, DEFAULT_SETTINGS } from '../../demos/05-hexapod/spider';
+import { Spider, DEFAULT_SETTINGS, FOOT_RADIUS } from '../../demos/05-hexapod/spider';
+import { auditFootholds, auditHexapod } from '../support/hexapodAudit';
 
 const DT = 1 / 60;
 
@@ -17,7 +18,7 @@ describe('Spider on flat ground', () => {
     expect(spider.position.z).toBeGreaterThan(-6 + DEFAULT_SETTINGS.speed * 4);
     expect(maxTilt).toBeLessThan(0.02);
     expect(Math.abs(spider.position.y - DEFAULT_SETTINGS.bodyHeight)).toBeLessThan(0.06);
-    for (const leg of spider.legs) if (!leg.stepping) expect(Math.abs(leg.planted.y)).toBeLessThan(1e-6);
+    for (const leg of spider.legs) if (!leg.stepping) expect(Math.abs(leg.planted.y - FOOT_RADIUS)).toBeLessThan(1e-6);
   });
 
   it('steps with feet that stay within leg reach', () => {
@@ -71,4 +72,25 @@ describe('Spider climbing', () => {
     expect(spider.up.y).toBeGreaterThan(0.95);
     expect(spider.position.y).toBeLessThan(0.6);
   });
+});
+
+describe('Spider ground contact on the playground (crates, wall, ramp, hills)', () => {
+  // Measured with an exact inside/outside test of the level geometry, independent of the raycaster.
+  // Before the fix: planted feet up to 37 cm deep, body up to 31 cm, >50 % of leg-frames >1 cm deep.
+  it('keeps feet and body out of the geometry while wandering for a minute', () => {
+    const a = auditHexapod(60);
+    const legFrames = a.frames * 6;
+    expect(a.footPlanted).toBeLessThan(0.04);
+    expect(a.footFrames / legFrames).toBeLessThan(0.01);
+    expect(a.body).toBeLessThan(0.06);
+    expect(a.bodyFrames / a.frames).toBeLessThan(0.01);
+  }, 30000);
+
+  // Regression: an interaction between swing-foot clamping and the body plane once left legs without a
+  // foothold for 2.5 s (feet 3 m behind) under jittery frame times. The plane now uses footholds only.
+  it.each([1, 3])('never leaves a leg without a foothold for long under jittery frames (seed %s)', (seed) => {
+    const r = auditFootholds(45, seed);
+    expect(r.worstLost).toBeLessThan(1);
+    expect(r.reached).toBeGreaterThanOrEqual(9);
+  }, 60000);
 });
