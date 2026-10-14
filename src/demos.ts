@@ -38,7 +38,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Foundations',
     summary: 'CCD, FABRIK and Jacobian damped least squares side by side, with joint limits and convergence plots.',
     tags: ['IK', 'FABRIK', 'Jacobian'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '04',
