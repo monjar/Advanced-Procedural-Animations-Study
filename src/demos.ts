@@ -74,7 +74,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Procedural Locomotion',
     summary: 'Overgrowth-style locomotion from a few key poses, a stride wheel and springs.',
     tags: ['stride wheel', 'springs', 'biped'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '08',
