@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { hills, terrainGrid, terrainMesh, type HeightFn } from '../../src/world/terrain';
 import { StaticRaycaster } from '../../src/world/raycast';
 
+const _local = new THREE.Vector3();
+
 export type WorldKind = 'playground' | 'flat' | 'wall';
 
 /** Static level geometry plus a raycaster over it. */
@@ -9,6 +11,8 @@ export class World {
   readonly group = new THREE.Group();
   readonly rays = new StaticRaycaster();
   readonly height: HeightFn;
+  /** Solid boxes (crates, wall, ramp) for exact inside/outside queries. */
+  private readonly solids: { inverse: THREE.Matrix4; half: THREE.Vector3 }[] = [];
 
   constructor(kind: WorldKind = 'playground') {
     this.height = kind === 'playground' ? hills({ seed: 5, amplitude: 0.7, scale: 7, flatRadius: 3 }) : () => 0;
@@ -37,6 +41,7 @@ export class World {
       ramp.position.set(-7, base + 0.55, -0.4);
       ramp.rotation.x = Math.atan2(1.2, 3.0); // high end toward the platform (−z)
       this.addMesh(ramp);
+      this.addSolid(ramp, new THREE.Vector3(0.9, 0.1, 1.6));
     }
   }
 
@@ -50,6 +55,28 @@ export class World {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h + 0.4, d), m);
     mesh.position.set(x, base - 0.4 + (h + 0.4) / 2, z);
     this.addMesh(mesh);
+    this.addSolid(mesh, new THREE.Vector3(w / 2, (h + 0.4) / 2, d / 2));
+  }
+
+  private addSolid(mesh: THREE.Mesh, half: THREE.Vector3): void {
+    mesh.updateMatrixWorld(true);
+    this.solids.push({ inverse: mesh.matrixWorld.clone().invert(), half });
+  }
+
+  /**
+   * How deep a point is inside solid geometry (0 when outside): below the terrain or inside a box.
+   * Exact, independent of the raycaster — used to audit penetration.
+   */
+  depth(p: THREE.Vector3): number {
+    let d = Math.max(0, this.height(p.x, p.z) - p.y);
+    for (const s of this.solids) {
+      _local.copy(p).applyMatrix4(s.inverse);
+      const dx = s.half.x - Math.abs(_local.x);
+      const dy = s.half.y - Math.abs(_local.y);
+      const dz = s.half.z - Math.abs(_local.z);
+      if (dx > 0 && dy > 0 && dz > 0) d = Math.max(d, Math.min(dx, dy, dz));
+    }
+    return d;
   }
 
   private addMesh(mesh: THREE.Mesh): void {
