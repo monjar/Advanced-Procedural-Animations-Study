@@ -117,9 +117,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '12-evolved-creatures',
     title: 'Evolved Virtual Creatures',
     tier: 'Physics-Based',
-    summary: 'Karl Sims-style co-evolution of morphology and controllers in Web Workers.',
+    summary: 'Karl Sims-style evolution of body plans and oscillator brains, simulated in Rapier across Web Workers.',
     tags: ['genetic algorithm', 'Rapier', 'workers'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '13',
