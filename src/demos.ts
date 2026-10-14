@@ -65,7 +65,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Procedural Locomotion',
     summary: 'Walk, trot, canter and gallop from a gait phase table with speed-driven transitions.',
     tags: ['gait', 'phase', 'spine'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '07',

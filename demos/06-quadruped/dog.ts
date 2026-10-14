@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createTwoBoneResult, solveTwoBone, type TwoBoneResult } from '../../src/ik/twoBone';
-import { SecondOrderVec3 } from '../../src/math/secondOrder';
+import { SecondOrderDynamics } from '../../src/math/secondOrder';
 import { lookRotation } from '../../src/math/quat';
 import { SpringChain } from '../../src/rig/springChain';
 import type { HeightFn } from '../../src/world/terrain';
@@ -63,7 +63,8 @@ export class Dog {
   readonly shoulder = new THREE.Vector3();
   readonly hip = new THREE.Vector3();
   standHeight = 0.44;
-  private readonly headFilter: SecondOrderVec3;
+  /** Filters only the head's height: horizontal tracking must not lag at speed. */
+  private readonly headHeight: SecondOrderDynamics;
   private readonly headLook = new THREE.Vector3(0, 0, 1);
   private idle = 0;
   private flexNow = 0;
@@ -101,8 +102,8 @@ export class Dog {
       this.neutral(leg, leg.planted);
       leg.foot.copy(leg.planted);
     }
-    this.headFilter = new SecondOrderVec3({ f: 2.2, zeta: 0.85, r: 0 }, this.headTarget(_v));
-    this.head.position.copy(this.headFilter.value);
+    this.headHeight = new SecondOrderDynamics({ f: 2.2, zeta: 0.85, r: 0 }, [this.headTarget(_v).y]);
+    this.head.position.copy(_v);
     const tailDirs = Array.from({ length: 7 }, (_, i) => new THREE.Vector3(0, 0.55 - i * 0.16, -1).normalize());
     this.tail = new SpringChain(tailDirs, 0.07, this.tailAnchor(_w), this.quaternion, { f: 2.2, zeta: 0.3, r: 0 });
     this.updateRig(0);
@@ -278,8 +279,9 @@ export class Dog {
 
     // Neck and stabilised head.
     const neckBase = _v.set(0, 0.1, 0.4).applyQuaternion(q).add(this.position);
-    if (dt > 0) this.headFilter.update(dt, this.headTarget(_w));
-    const head = this.head.position.copy(this.headFilter.value);
+    const head = this.head.position.copy(this.headTarget(_w));
+    if (dt > 0) head.y = this.headHeight.update(dt, [head.y])[0];
+    else head.y = this.headHeight.y[0];
     const maxReach = 0.34;
     if (head.distanceTo(neckBase) > maxReach) head.sub(neckBase).setLength(maxReach).add(neckBase);
     const mid = _w.copy(neckBase).lerp(head, 0.5).addScaledVector(UP, 0.05);
