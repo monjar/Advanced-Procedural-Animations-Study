@@ -1,5 +1,6 @@
 import { buildFeatures, type MotionFeatures } from '../../src/anim/mmfeatures';
 import { MotionMatcher, type MatcherSettings } from '../../demos/09-motion-matching/matcher';
+import { FootLocker, plantedFeet } from '../../demos/09-motion-matching/footlock';
 import type { ControlInput } from '../../demos/09-motion-matching/controller';
 import { loadMotionDB } from './mmdb';
 
@@ -7,6 +8,8 @@ let mf: MotionFeatures | undefined;
 export function features(): MotionFeatures {
   return (mf ??= buildFeatures(loadMotionDB()));
 }
+
+export { plantedFeet } from '../../demos/09-motion-matching/footlock';
 
 export interface Segment {
   /** Seconds this input is held. */
@@ -32,11 +35,20 @@ export interface Run {
   transitionJumps: number[];
   /** Largest per-step joint rotation change (rad) at non-transition steps. */
   steadyJumps: number[];
+  /** Mean horizontal speed (m/s) of the rendered ankles while the data says they are planted (foot flat). */
+  skate: number;
+  /** Largest distance between a locked foot's pin and the solved ankle (m). */
+  lockError: number;
 }
 
 /** Drive a matcher through scripted input at a given display rate. */
-export function runScript(script: Segment[], fps = 60, settings: Partial<MatcherSettings> = {}): Run {
+export function runScript(script: Segment[], fps = 60, settings: Partial<MatcherSettings> = {}, footLock = false): Run {
   const m = new MotionMatcher(features(), settings);
+  const locker = new FootLocker(m.mf.db.joints);
+  locker.enabled = footLock;
+  let skateDist = 0;
+  let contactTime = 0;
+  let lockError = 0;
   const J = m.J;
   const samples: Sample[] = [];
   const transitionJumps: number[] = [];
@@ -59,6 +71,14 @@ export function runScript(script: Segment[], fps = 60, settings: Partial<Matcher
     const n = Math.round(seg.duration * fps);
     for (let i = 0; i < n; i++) {
       m.update(seg.input, 1 / fps);
+      const contacts = plantedFeet(m);
+      locker.apply(m.world, contacts, 1 / fps);
+      locker.feet.forEach((f, k) => {
+        if (!contacts[k]) return;
+        skateDist += f.skate;
+        contactTime += 1 / fps;
+        if (f.locked) lockError = Math.max(lockError, Math.hypot(m.world[f.ankle * 3] - f.lock.x, m.world[f.ankle * 3 + 1] - f.lock.y, m.world[f.ankle * 3 + 2] - f.lock.z));
+      });
       t += 1 / fps;
       const back = samples[samples.length - window];
       samples.push({
@@ -72,7 +92,7 @@ export function runScript(script: Segment[], fps = 60, settings: Partial<Matcher
       });
     }
   });
-  return { matcher: m, samples, transitionJumps, steadyJumps };
+  return { matcher: m, samples, transitionJumps, steadyJumps, skate: skateDist / Math.max(1e-9, contactTime), lockError };
 }
 
 export const IDLE: ControlInput = { x: 0, z: 0, run: false };

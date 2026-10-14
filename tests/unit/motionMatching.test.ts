@@ -69,3 +69,14 @@ describe('motion matching runtime on scripted input', () => {
     }
   });
 });
+
+describe('foot locking', () => {
+  it('cuts planted-ankle drift to a fraction of the unlocked matcher, within reach', () => {
+    const free = runScript(SCRIPT, 60, {}, false);
+    const locked = runScript(SCRIPT, 60, {}, true);
+    expect(free.skate).toBeGreaterThan(0.1);
+    expect(locked.skate).toBeLessThan(0.04);
+    expect(locked.skate).toBeLessThan(0.35 * free.skate);
+    expect(locked.lockError).toBeLessThan(0.07);
+  });
+});

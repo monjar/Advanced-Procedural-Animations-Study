@@ -10,6 +10,7 @@ import { SegmentBatch } from '../../src/rig/segments';
 import { drawSkeleton } from '../../src/rig/skeletonView';
 import { createDemoFrame } from '../../src/ui/demoFrame';
 import type { ControlInput } from './controller';
+import { FootLocker, plantedFeet } from './footlock';
 import { MotionMatcher } from './matcher';
 import { drawTimeline } from './timeline';
 import writeup from './README.md?raw';
@@ -27,6 +28,7 @@ const buffer = await (await fetch(new URL('../../assets/mocap/cmu16-mm.bin', doc
 const db = parseMotionDB(buffer);
 const mf = buildFeatures(db);
 const matcher = new MotionMatcher(mf, { search: searchAABB });
+const locker = new FootLocker(db.joints);
 
 const LEFT = 0xff8a3d;
 const RIGHT = 0x5fb3ff;
@@ -114,6 +116,7 @@ app.onFixedUpdate((dt) => {
   if (manual()) view.autopilot = false;
   if (view.autopilot) autopilot(dt);
   matcher.update(input, dt);
+  locker.apply(matcher.world, plantedFeet(matcher), dt);
 });
 
 const p = new THREE.Vector3();
@@ -126,13 +129,13 @@ let searchMs = 0;
 
 app.onFrame((_alpha, frameDt) => {
   const w = matcher.world;
-  const contactL = db.contacts[matcher.frame * 2] === 1;
-  const contactR = db.contacts[matcher.frame * 2 + 1] === 1;
+  const contactL = locker.feet[0].locked;
+  const contactR = locker.feet[1].locked;
   batch.begin();
   drawSkeleton(batch, db.joints, w, {
     color: (n) => (/^Left|^LHip/.test(n) ? LEFT : /^Right|^RHip/.test(n) ? RIGHT : BODY),
     jointColor: (n) =>
-      (n === 'LeftToeBase' && contactL) || (n === 'RightToeBase' && contactR) ? 0xffffff : /^Left|^LHip/.test(n) ? LEFT : /^Right|^RHip/.test(n) ? RIGHT : BODY,
+      (n === 'LeftFoot' && contactL) || (n === 'RightFoot' && contactR) ? 0xffffff : /^Left|^LHip/.test(n) ? LEFT : /^Right|^RHip/.test(n) ? RIGHT : BODY,
   });
   batch.commit();
   head.position.set(w[headIndex * 3], w[headIndex * 3 + 1] + 0.08, w[headIndex * 3 + 2]);
@@ -220,6 +223,7 @@ trans.addBinding(matcher.settings, 'inertialize', { label: 'inertialize' });
 trans.addBinding(matcher.settings, 'halflife', { label: '½-life (s)', min: 0.02, max: 0.4, step: 0.01 });
 trans.addBinding(matcher.settings, 'adjust', { label: 'adjust to path' });
 trans.addBinding(matcher.settings, 'clamp', { label: 'clamp path' });
+trans.addBinding(locker, 'enabled', { label: 'foot locking' }).on('change', () => locker.reset());
 
 const viewFolder = pane.addFolder({ title: 'View' });
 viewFolder.addBinding(view, 'trajectories', { label: 'trajectories' });

@@ -56,7 +56,11 @@ or held if it ended at rest. A frame is only a candidate if the take continues f
    Two small corrections tie it to the controller: **adjust** pulls the character towards the predicted path
    but never by more than half its own speed (so a standing character never skates), and **clamp** keeps the
    path within 15 cm of the character.
-4. **Inertialization**: on a jump, the difference between the pose on screen and the new frame is stored as
+4. **Foot locking**: a foot that the playing frame has in contact *and* nearly still (< 0.25 m/s — contacts
+   also cover heel strike and toe-off, when the ankle rolls) is pinned where it touched down; the leg is
+   re-solved with the two-bone IK of study 02 (pole from the animated knee) and the toe follows the ankle.
+   When the contact ends, the pin releases through a decaying offset.
+5. **Inertialization**: on a jump, the difference between the pose on screen and the new frame is stored as
    per-joint rotation offsets (and hip position/velocity offsets) that decay with a critically damped
    spring. Only one pose is ever evaluated; there is no cross-fade.
 
@@ -74,6 +78,8 @@ identically at any display rate.
 | clip switches | 3.8 per second |
 | per-frame joint jump at a switch (median / worst) | **2.5° / 15°** inertialized vs 15° / 78° hard cut |
 | per-frame joint change in the data itself (99th percentile) | 18° |
+| planted-ankle drift: in the data itself / matched / matched + foot locking | 9.1 / 14 / **2.8 cm/s** |
+| worst pin the leg could not reach | 4.6 cm |
 | 25 / 60 / 144 fps | same path, same switches |
 
 Inertialized switches are no rougher than the mocap itself; hard cuts are 4–6× worse.
@@ -88,7 +94,8 @@ hours of data.
   from rest exist (two walks, two runs) but quick restarts lean on inertialization.
 - One residual marker glitch (a 50° ankle flick in take 16_29) survives the spike filter: it moves over two
   frames and does not come back, so it can't be told from real motion automatically.
-- No foot IK yet: inertialization and the path adjustment can make a planted foot slide a little.
+- A pin can end up out of the leg's reach when inertialization or the path adjustment moves the hips
+  (worst 4.6 cm); the foot then slides that far.
 - No idle turning-on-the-spot data: turning while standing walks a small circle.
 
 ## References
