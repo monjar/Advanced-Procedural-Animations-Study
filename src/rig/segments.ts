@@ -16,12 +16,18 @@ export class SegmentBatch extends THREE.Group {
   private readonly spheres: THREE.InstancedMesh;
   private nSeg = 0;
   private nJoint = 0;
+  // Capacities: `count` is set to what was drawn on commit, so it cannot be the limit (an empty frame would
+  // otherwise disable drawing for good).
+  private readonly maxSeg: number;
+  private readonly maxJoint: number;
 
   constructor(capacity: number, material: THREE.Material, jointMaterial: THREE.Material = material) {
     super();
     const cyl = new THREE.CylinderGeometry(1, 1, 1, 14, 1).translate(0, 0.5, 0);
     this.cylinders = new THREE.InstancedMesh(cyl, material, capacity);
     this.spheres = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), jointMaterial, capacity + 8);
+    this.maxSeg = capacity;
+    this.maxJoint = capacity + 8;
     for (const m of [this.cylinders, this.spheres]) {
       m.castShadow = true;
       m.receiveShadow = true;
@@ -37,7 +43,7 @@ export class SegmentBatch extends THREE.Group {
   }
 
   segment(a: THREE.Vector3, b: THREE.Vector3, radius: number, color?: THREE.ColorRepresentation): void {
-    if (this.nSeg >= this.cylinders.count) return;
+    if (this.nSeg >= this.maxSeg) return;
     _d.subVectors(b, a);
     const len = _d.length();
     _q.setFromUnitVectors(UP, len > 1e-9 ? _d.divideScalar(len) : UP);
@@ -49,7 +55,7 @@ export class SegmentBatch extends THREE.Group {
   }
 
   joint(p: THREE.Vector3, radius: number, color?: THREE.ColorRepresentation): void {
-    if (this.nJoint >= this.spheres.count) return;
+    if (this.nJoint >= this.maxJoint) return;
     _m.compose(p, _q.identity(), _s.setScalar(radius));
     this.spheres.setMatrixAt(this.nJoint, _m);
     if (color !== undefined) this.spheres.setColorAt(this.nJoint, _c.set(color));
