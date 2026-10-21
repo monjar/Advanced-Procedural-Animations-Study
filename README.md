@@ -22,12 +22,15 @@ write-up. The full list, techniques and references are in [ROADMAP.md](ROADMAP.m
 | 10 | [Active Ragdoll](demos/10-active-ragdoll/README.md) | Rapier capsules, joint-motor muscles, PuppetMaster pins, hits, falls and recovery |
 | 11 | [GPU Procedural Crowds](demos/11-gpu-crowds/README.md) | WebGL2 GPGPU boids with a bitonic-sorted grid, verified against a CPU reference; swimming in the vertex shader |
 | 12 | [Evolved Virtual Creatures](demos/12-evolved-creatures/README.md) | Sims-style body plans and oscillator brains, GA across Web Workers, deterministic replays |
-| 13–15 | RL locomotion, LLM-directed animation, procedural face | see [ROADMAP.md](ROADMAP.md) |
+| 13 | [RL Locomotion Policy](demos/13-rl-locomotion/README.md) | PPO quadruped trained offline in MuJoCo, running in MuJoCo WASM — reproduced to 10⁻¹⁴; drag and shove it |
+| 14 | [LLM-Directed Animation](demos/14-llm-directed/README.md) | Claude writes schema-checked programs over walk / look / point / reach / wave for the procedural biped |
+| 15 | [Procedural Face](demos/15-procedural-face/README.md) | saccades, blinks, VOR; formant-tracking lip-sync scored against its own synthesized voice |
 
 The studies are tested headlessly, not only eyeballed: the hexapod's wall traversal, the quadruped's gait
 blending, the mocap foot penetration, motion matching under scripted input, the ragdoll's hit recovery, the GPU
-boids against a CPU reference and the evolved creatures' determinism are all checked by unit or browser
-tests.
+boids against a CPU reference, the evolved creatures' determinism, the hexapod standing still, the RL policy's
+browser simulator against the training one, the LLM programs' outcomes and the lip-sync against ground truth are
+all checked by unit or browser tests.
 
 ## Run locally
 
@@ -59,8 +62,11 @@ tests/unit, tests/e2e        vitest and playwright suites
 tools/bvh-to-clip.mjs        CMU BVH → loopable JSON clip (contacts, loop fix, root motion)
 tools/fetch-cmu16.sh, tools/build-mm-db.mjs   CMU subject 16 → motion-matching database
 tools/evolve.ts              offline evolution of the study 12 champions (node --experimental-transform-types)
+training/                    offline PPO training of the study 13 policy (Python, MuJoCo, PyTorch; see its README)
 public/assets/mocap/         converted motion capture (CMU, with attribution)
 public/assets/creatures/     evolved champions
+public/assets/rl/            the study 13 policy weights and robot model
+tests/fixtures/              recorded reference runs (study 13 parity)
 ```
 
 Adding a study: create `demos/NN-slug/` with `index.html` + `main.ts` + `README.md`, register it in
@@ -72,7 +78,7 @@ Adding a study: create `demos/NN-slug/` with `index.html` + `main.ts` + `README.
 request, and deploys `dist/` to GitHub Pages from `master`. Enable it once under
 **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-Stack: Vite multi-page app, TypeScript, Three.js, Tweakpane, three-mesh-bvh.
+Stack: Vite multi-page app, TypeScript, Three.js, Tweakpane, three-mesh-bvh, Rapier, MuJoCo WASM, the Anthropic SDK.
 
 Motion capture: the data used in this project was obtained from mocap.cs.cmu.edu. The database was created
 with funding from NSF EIA-0196217.
