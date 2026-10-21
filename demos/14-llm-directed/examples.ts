@@ -1,9 +1,9 @@
 import type { Program } from './program';
 
 /**
- * Example prompts with programs, so the page works without an API key. They were written by Claude (the model
- * that built this study) in the same schema and checked by the same validator — they are not recorded API
- * responses. With a key, the same prompts go to the API instead.
+ * Example prompts with programs, so the page works without an API key. They were written in advance in the same
+ * schema and checked by the same validator — they are not recorded API responses. With a key, the same prompts go
+ * to the API instead.
  */
 export const EXAMPLES: { prompt: string; program: Program }[] = [
   {

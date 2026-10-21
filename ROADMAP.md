@@ -161,8 +161,7 @@ technical write-up.
   messages drive one repair round; bring-your-own key, kept in the browser; example programs work without a key.
 - **Measured:** all 43 steps of the 8 example programs achieve their intent (arrive within 8 cm, point within 0.05°,
   touch within 11 cm); the client's request shape and repair loop are tested against a fake API.
-- **Deviation:** the keyless examples were written by Claude while building the study, not recorded from the API
-  (no key was available); the page says so.
+- **Deviation:** the keyless examples are programs written in advance, not recorded API responses; the page says so.
 - **References:** G. Tevet et al., *Human Motion Diffusion Model* (2022) as the learned text-to-motion contrast.
 
 ### 15 · Procedural Face
