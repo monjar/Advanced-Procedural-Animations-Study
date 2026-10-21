@@ -232,8 +232,8 @@ technical write-up.
 ### 21 · Physics-Based Mocap Tracking
 - **Built:** a 28-DoF MuJoCo humanoid built from the CMU skeleton; DeepMimic's imitation reward, reference-state
   initialisation and early termination; PPO with residual actions and normalised observations; runs in MuJoCo WASM.
-- **Measured:** walk 1.10 m/s at 0.9° RMS pose error, indefinitely; plain PD tracking falls at 1.23 s; shoves of
-  0.7 m/s survived from every side.
+- **Measured:** walk 1.10 m/s at 0.9° RMS pose error and run 3.25 m/s at 1.4°, indefinitely; plain PD tracking
+  falls at 1.26 s (walk) and 0.54 s (run); shoves of 0.7 m/s survived from every side, and the run takes 1 m/s.
 - **References:** X. B. Peng, P. Abbeel, S. Levine, M. van de Panne, *DeepMimic* (SIGGRAPH 2018).
 
 ### 22 · Hair & Tentacles

@@ -114,7 +114,7 @@ app.onFixedUpdate((dt) => {
       const y = sim.data.qpos[1];
       sim.offset = [0, 0];
       sim.offsetYaw = 0;
-      const t = sim.t;
+      const t = sim.ref.awayFromSeam(sim.t);
       sim.reset(t);
       const r = sim.refAt(t);
       sim.offset = [x - r[0], y - r[1]];
@@ -233,7 +233,7 @@ info.addBinding(readout, 'falls', { readonly: true, format: (v: number) => v.toF
 pane.addButton({ title: 'Restart' }).on('click', () => {
   sim.offset = [0, 0];
   sim.offsetYaw = 0;
-  sim.reset(0);
+  sim.reset(sim.ref.awayFromSeam(0));
   view.snapshot();
 });
 const simHooks = addSimulationFolder(pane, app.loop);

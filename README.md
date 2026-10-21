@@ -30,7 +30,7 @@ write-up. The full list, techniques and references are in [ROADMAP.md](ROADMAP.m
 | 18 | [Procedural Hands & Grasping](demos/18-procedural-hands/README.md) | autograsp planner with pinch synergy, Ferrari–Canny ε and opposition, every grasp lifted in MuJoCo |
 | 19 | [Character Crowds](demos/19-character-crowds/README.md) | ORCA (RVO2 port) vs social forces on instanced procedural walkers: swaps, crossings, a door, a corridor |
 | 20 | [Snakes & Worms](demos/20-snakes/README.md) | slithering, sidewinding, peristalsis and inching from shape changes and anisotropic friction alone (Hu et al. 2009) |
-| 21 | [Physics-Based Mocap Tracking](demos/21-physics-mocap/README.md) | DeepMimic in MuJoCo: a 28-DoF humanoid performs a CMU walk and run with PPO; plain tracking falls in 1.2 s |
+| 21 | [Physics-Based Mocap Tracking](demos/21-physics-mocap/README.md) | DeepMimic in MuJoCo: a 28-DoF humanoid performs a CMU walk and run with PPO; plain tracking falls in 0.5–1.3 s |
 | 22 | [Hair & Tentacles](demos/22-strands/README.md) | Cosserat rods in XPBD: ~400 hair strands, octopus bend propagation, a twisted rod buckling near Greenhill's load |
 | 23 | [Spacetime Constraints](demos/23-spacetime/README.md) | Witkin & Kass's jumping lamp by CMA-ES + Levenberg–Marquardt; anticipation emerges, hand-keyed jumps need 2–3× its weight from nowhere |
 | 24 | [Creature Creator](demos/24-creature-creator/README.md) | user-built bodies get a gait, Froude-scaled strides, footholds and secondary motion with nothing authored |

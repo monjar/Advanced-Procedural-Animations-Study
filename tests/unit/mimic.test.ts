@@ -56,7 +56,7 @@ describe.each(trained)('physics-based tracking of the %s clip', (clip) => {
     const run = (usePolicy: boolean, seconds: number) => {
       const sim = new MimicSim(mj, xml, ref, policy);
       const mlp = new Mlp(policy as never);
-      sim.reset(0);
+      sim.reset(ref.awayFromSeam(0));
       const obs = new Float64Array(NUM_OBS);
       let err = 0;
       let n = 0;

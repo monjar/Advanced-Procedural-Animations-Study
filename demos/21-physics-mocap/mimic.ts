@@ -134,6 +134,18 @@ export class Reference {
     return this.shift(out, cycles);
   }
 
+  /**
+   * A clip time at least `margin` seconds from the loop's seam. The best loop cut in a short take is still a small
+   * jump (the run's root drops 3.8 cm across it); passing through it is harmless, but a start *on* it takes its
+   * velocity from a finite difference across the jump, and the character falls.
+   */
+  awayFromSeam(t: number, margin = 0.03): number {
+    const u = (((t / this.period) % 1) + 1) % 1;
+    const toSeam = Math.min(u, 1 - u) * this.period;
+    if (toSeam >= margin) return t;
+    return u < 0.5 ? t + (margin - toSeam) : t + toSeam + margin;
+  }
+
   private shift(q: Float64Array, k: number): Float64Array {
     if (k === 0) return q;
     const yaw = k * this.dyaw;
@@ -178,7 +190,7 @@ export class MimicSim {
     this.model = mj.MjModel.from_xml_string(xml);
     this.data = new mj.MjData(this.model);
     this.eeIds = END_EFFECTORS.map((n) => mj.mj_name2id(this.model, mj.mjtObj.mjOBJ_BODY.value, n));
-    this.reset(0);
+    this.reset(ref.awayFromSeam(0));
   }
 
   /** The clip at time t, rotated by offsetYaw and shifted by offset (env.py's _ref, plus a shift). */

@@ -2,8 +2,9 @@
 
 Study 08 plays CMU motion capture on a skeleton. This study makes a simulated body *perform* it: a 59 kg MuJoCo
 humanoid with 28 motorised joints, which has to keep its balance with nothing holding it up. Played straight
-into its joint motors, the walk falls over in 1.2 seconds. A policy trained with reinforcement learning, as in
-DeepMimic (Peng, Abbeel, Levine & van de Panne, SIGGRAPH 2018), walks it indefinitely and survives being shoved.
+into its joint motors, the walk falls over in 1.3 seconds and the run in half a second. A policy trained with
+reinforcement learning, as in DeepMimic (Peng, Abbeel, Levine & van de Panne, SIGGRAPH 2018), walks or runs it
+indefinitely and survives being shoved.
 The translucent blue figure is the mocap; the grey one is physics.
 
 ## The body, built from the mocap (`training/mimic/humanoid.py`)
@@ -39,8 +40,9 @@ PPO, using study 13's implementation, on 352 simulations across 11 worker proces
 - Every quantity is measured in the character's own heading frame, so the reward asks for the motion, not the
   mocap's place in the world.
 
-The walk trained for 4,000 iterations (45 M steps) in 70 minutes. Its episodes went from 1.8 s at iteration 200
-to the full 10 s by iteration 1,400.
+Each clip trained for 4,000 iterations (45 M steps) in 67–70 minutes. The walk's episodes went from 1.8 s at
+iteration 200 to the full 10 s by iteration 1,400. The run's were already 9 s long by iteration 200: it learned
+to stay up early, and spent the rest of training on tracking.
 
 **Two things had to change before it learned at all.**
 1. The adaptive learning rate (study 13's, aiming for a fixed KL divergence) collapsed to its floor. With 28
@@ -53,19 +55,31 @@ to the full 10 s by iteration 1,400.
 
 In MuJoCo WASM, in the browser runtime:
 
-| | |
-|---|---|
-| browser vs Python | observations and final state agree to 10⁻⁴ over 3 s; the TypeScript MLP matches PyTorch to 10⁻⁴ |
-| speed | 1.10 m/s (the clip: 1.10) |
-| pose tracking | 0.9° RMS over the 28 joints |
-| the same clip without the policy | falls at 1.23 s |
-| shoves survived (6 trials each) | 0.7 m/s from every side, 6/6. At 1.0 m/s: from behind 5/6, the left 6/6, the right 4/6, the front 1/6 |
+| | walk | run |
+|---|---|---|
+| browser vs Python | observations and final state agree to 10⁻⁴ over 3 s; the TypeScript MLP matches PyTorch to 10⁻⁴ | the same |
+| speed over 20 s | 1.10 m/s (the clip: 1.10) | 3.25 m/s (the clip: 3.14) |
+| pose tracking | 0.9° RMS over the 28 joints | 1.4° RMS |
+| the same clip without the policy | falls at 1.26 s | falls at 0.54 s |
+| shoves survived at 0.7 m/s (6 trials per side) | 6/6 from every side | 6/6 from every side |
+| at 1.0 m/s | behind 6/6, left 6/6, right 4/6, front 3/6 | 6/6 from every side |
+| at 2.0 m/s | | behind 4/6, front 4/6, left 6/6, right 6/6 |
 
 For comparison, study 17's hand-tuned SIMBICON walker survives 0.5 m/s sideways and 0.2 m/s from the front.
+
+**The run shrugs off shoves the walk can't.** At 3 m/s a shove of 1 m/s is a third of the body's momentum, not
+almost all of it. A runner also re-places a foot every 0.28 s, so it gets a new chance to catch itself sooner.
 
 **A bug only the browser found.** At clip time 0 the reference velocity is measured across t < 0, and the
 cycle shift there mishandled negative cycles. That produced a huge starting velocity, and the character fell in
 0.84 s. Training almost never starts that close to 0, so it never noticed. The browser starts exactly there.
+
+**The run's loop has a seam.** The run take is only 1.4 s long, and even its best-matching loop cut drops the
+root 3.8 cm in one frame. Running *through* the seam is harmless: the policy does it twice a second. Starting
+*on* it is not. The starting velocity comes from a finite difference across the jump, and a run started within
+10 ms of the seam falls within half a second. So every start, including getting up after a fall, is moved at
+least 30 ms away from the seam. Blending the jump out of the clip would remove the seam itself, but it changes the
+reference, so the policy would need retraining.
 
 ## Interaction
 
@@ -76,7 +90,7 @@ between the walk and the run.
 
 - One policy per clip. Clips can't be blended or switched mid-stride, and the character can't be steered: it
   follows the clip's own direction (DeepMimic adds goals for that).
-- Shoves from the front are its weak side: it was trained walking forward, and stopping isn't in the clip.
+- The walk's weak side is shoves from the front: it was trained walking forward, and stopping isn't in the clip.
 - The policy saw only flat ground.
 
 ## References
