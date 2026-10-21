@@ -15,6 +15,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "0.134.0",
     "@dimforge/rapier3d-compat": "0.21.0",
+    "@mediapipe/tasks-vision": "1.1.0",
     "@mujoco/mujoco": "3.15.0",
     "@tweakpane/plugin-essentials": "^0.2.1",
     "marked": "^18.1.1",

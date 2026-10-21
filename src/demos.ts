@@ -1,4 +1,4 @@
-export type Tier = 'Foundations' | 'Procedural Locomotion' | 'Data-Driven' | 'Physics-Based' | 'Learned' | 'Beyond the Roadmap';
+export type Tier = 'Foundations' | 'Procedural Locomotion' | 'Data-Driven' | 'Physics-Based' | 'Learned' | 'Beyond the Roadmap' | 'Further Studies';
 
 export interface DemoInfo {
   id: string;
@@ -10,7 +10,7 @@ export interface DemoInfo {
   status: 'live' | 'planned';
 }
 
-export const TIERS: Tier[] = ['Foundations', 'Procedural Locomotion', 'Data-Driven', 'Physics-Based', 'Learned', 'Beyond the Roadmap'];
+export const TIERS: Tier[] = ['Foundations', 'Procedural Locomotion', 'Data-Driven', 'Physics-Based', 'Learned', 'Beyond the Roadmap', 'Further Studies'];
 
 export const DEMOS: DemoInfo[] = [
   {
@@ -182,6 +182,87 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Beyond the Roadmap',
     summary: 'ORCA (RVO2 port) vs Helbing social forces steering procedural walkers through swaps, crossings, a door and a corridor.',
     tags: ['ORCA', 'social forces', 'crowds'],
+    status: 'live',
+  },
+  {
+    id: '20',
+    slug: '20-snakes',
+    title: 'Snakes & Worms',
+    tier: 'Further Studies',
+    summary: 'Limbless locomotion from shape changes and anisotropic friction alone: slithering, sidewinding, peristalsis, inching.',
+    tags: ['friction', 'CPG', 'shape-driven'],
+    status: 'live',
+  },
+  {
+    id: '21',
+    slug: '21-physics-mocap',
+    title: 'Physics-Based Mocap Tracking',
+    tier: 'Further Studies',
+    summary: 'DeepMimic-style: a MuJoCo humanoid trained with PPO to reproduce CMU walk and run clips under physics, and to survive shoves.',
+    tags: ['DeepMimic', 'PPO', 'MuJoCo'],
+    status: 'live',
+  },
+  {
+    id: '22',
+    slug: '22-strands',
+    title: 'Hair & Tentacles',
+    tier: 'Further Studies',
+    summary: 'XPBD Cosserat rods with stretch, bend and twist: hair, a swaying tentacle and an octopus arm that reaches.',
+    tags: ['XPBD', 'Cosserat rods', 'strands'],
+    status: 'live',
+  },
+  {
+    id: '23',
+    slug: '23-spacetime',
+    title: 'Spacetime Constraints',
+    tier: 'Further Studies',
+    summary: 'Witkin & Kass: a jumping lamp whose whole motion is optimised at once so that it obeys physics and saves effort.',
+    tags: ['optimisation', 'physics', 'classic'],
+    status: 'live',
+  },
+  {
+    id: '24',
+    slug: '24-creature-creator',
+    title: 'Creature Creator',
+    tier: 'Further Studies',
+    summary: 'Build a body from parts; it gets a skeleton, a gait and secondary motion automatically, Spore-style.',
+    tags: ['procedural', 'gait', 'IK'],
+    status: 'live',
+  },
+  {
+    id: '25',
+    slug: '25-climbing',
+    title: 'Procedural Climbing',
+    tier: 'Further Studies',
+    summary: 'Hands and feet choose holds on a wall, grasp them, and the body follows by IK.',
+    tags: ['climbing', 'IK', 'planning'],
+    status: 'live',
+  },
+  {
+    id: '26',
+    slug: '26-phase-locomotion',
+    title: 'Phase-Functioned Locomotion',
+    tier: 'Further Studies',
+    summary: 'A phase-functioned network (PFNN) and a plain one of the same size learn CMU locomotion; run side by side, the plain one blurs.',
+    tags: ['PFNN', 'phase', 'learned'],
+    status: 'live',
+  },
+  {
+    id: '27',
+    slug: '27-mm-crowds',
+    title: 'Motion-Matched Crowds',
+    tier: 'Further Studies',
+    summary: "Study 19's ORCA crowds with study 09's motion matching for bodies: collisions against foot sliding, and what each body model costs.",
+    tags: ['motion matching', 'crowds', 'LMM'],
+    status: 'live',
+  },
+  {
+    id: '28',
+    slug: '28-webcam-puppet',
+    title: 'Webcam Puppeteering',
+    tier: 'Further Studies',
+    summary: 'Your pose from the webcam, filtered, retargeted onto any body, and walked across the floor from the feet.',
+    tags: ['pose estimation', 'retargeting', 'filtering'],
     status: 'live',
   },
 ];
