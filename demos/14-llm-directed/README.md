@@ -60,8 +60,7 @@ require all of it:
 ## Without an API key
 
 The examples below the prompt box run from programs written in advance, so the page works without a key.
-They were written by Claude (the model that built this study) in the same schema and pass the same validator.
-They are **not** recorded API responses — there was no API key to record with while building this. With a key
+They use the same schema and pass the same validator, but they are **not** recorded API responses. With a key
 (stored only in your browser, and only if you tick "remember"), any prompt goes to the API from your browser.
 
 The client is tested against a fake API: it checks the request (model, schema, fallbacks header, browser-access
