@@ -25,12 +25,17 @@ write-up. The full list, techniques and references are in [ROADMAP.md](ROADMAP.m
 | 13 | [RL Locomotion Policy](demos/13-rl-locomotion/README.md) | PPO quadruped trained offline in MuJoCo, running in MuJoCo WASM — reproduced to 10⁻¹⁴; drag and shove it |
 | 14 | [LLM-Directed Animation](demos/14-llm-directed/README.md) | Claude writes schema-checked programs over walk / look / point / reach / wave for the procedural biped |
 | 15 | [Procedural Face](demos/15-procedural-face/README.md) | saccades, blinks, VOR; formant-tracking lip-sync scored against its own synthesized voice |
+| 16 | [Learned Motion Matching](demos/16-learned-motion-matching/README.md) | decompressor, stepper and projector replace study 09's database — side by side, 10× smaller, smoother |
+| 17 | [Physics-Based Walker](demos/17-simbicon/README.md) | SIMBICON in MuJoCo: balance feedback, world-frame torso control, steering, measured push envelopes |
+| 18 | [Procedural Hands & Grasping](demos/18-procedural-hands/README.md) | autograsp planner with pinch synergy, Ferrari–Canny ε and opposition, every grasp lifted in MuJoCo |
+| 19 | [Character Crowds](demos/19-character-crowds/README.md) | ORCA (RVO2 port) vs social forces on instanced procedural walkers: swaps, crossings, a door, a corridor |
 
 The studies are tested headlessly, not only eyeballed: the hexapod's wall traversal, the quadruped's gait
 blending, the mocap foot penetration, motion matching under scripted input, the ragdoll's hit recovery, the GPU
 boids against a CPU reference, the evolved creatures' determinism, the hexapod standing still, the RL policy's
-browser simulator against the training one, the LLM programs' outcomes and the lip-sync against ground truth are
-all checked by unit or browser tests.
+browser simulator against the training one, the LLM programs' outcomes, the lip-sync against ground truth, the
+learned networks against the database, the walker's push envelope, every planned grasp's physical lift and the
+crowds' collisions are all checked by unit or browser tests.
 
 ## Run locally
 

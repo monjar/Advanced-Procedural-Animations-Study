@@ -1,4 +1,4 @@
-export type Tier = 'Foundations' | 'Procedural Locomotion' | 'Data-Driven' | 'Physics-Based' | 'Learned';
+export type Tier = 'Foundations' | 'Procedural Locomotion' | 'Data-Driven' | 'Physics-Based' | 'Learned' | 'Beyond the Roadmap';
 
 export interface DemoInfo {
   id: string;
@@ -10,7 +10,7 @@ export interface DemoInfo {
   status: 'live' | 'planned';
 }
 
-export const TIERS: Tier[] = ['Foundations', 'Procedural Locomotion', 'Data-Driven', 'Physics-Based', 'Learned'];
+export const TIERS: Tier[] = ['Foundations', 'Procedural Locomotion', 'Data-Driven', 'Physics-Based', 'Learned', 'Beyond the Roadmap'];
 
 export const DEMOS: DemoInfo[] = [
   {
@@ -146,6 +146,42 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Learned',
     summary: 'Saccades, blinks and eye–head coordination, and lip-sync from audio: formant tracking driving viseme morph targets.',
     tags: ['gaze', 'lip-sync', 'morph targets'],
+    status: 'live',
+  },
+  {
+    id: '16',
+    slug: '16-learned-motion-matching',
+    title: 'Learned Motion Matching',
+    tier: 'Beyond the Roadmap',
+    summary: 'Study 09 with the database replaced by three small networks — decompressor, stepper, projector — side by side with the original.',
+    tags: ['neural networks', 'motion matching', 'compression'],
+    status: 'live',
+  },
+  {
+    id: '17',
+    slug: '17-simbicon',
+    title: 'Physics-Based Walker',
+    tier: 'Beyond the Roadmap',
+    summary: 'A torque-driven biped that balances by itself: SIMBICON state machine and balance feedback in MuJoCo. Push it, steer it.',
+    tags: ['SIMBICON', 'balance', 'MuJoCo WASM'],
+    status: 'live',
+  },
+  {
+    id: '18',
+    slug: '18-procedural-hands',
+    title: 'Procedural Hands & Grasping',
+    tier: 'Beyond the Roadmap',
+    summary: 'A 21-joint hand plans grasps around shapes (autograsp closing, Ferrari–Canny ε, opposition), then lifts each in MuJoCo.',
+    tags: ['grasping', 'force closure', 'MuJoCo'],
+    status: 'live',
+  },
+  {
+    id: '19',
+    slug: '19-character-crowds',
+    title: 'Character Crowds',
+    tier: 'Beyond the Roadmap',
+    summary: 'ORCA (RVO2 port) vs Helbing social forces steering procedural walkers through swaps, crossings, a door and a corridor.',
+    tags: ['ORCA', 'social forces', 'crowds'],
     status: 'live',
   },
 ];

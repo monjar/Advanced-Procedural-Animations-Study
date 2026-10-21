@@ -22,3 +22,14 @@ MuJoCo WASM. Keep `mujoco` here and `@mujoco/mujoco` in `package.json` on the sa
 | `ppo.py` | PPO: actor-critic, GAE, clipped losses, KL-adaptive learning rate |
 | `train.py` | worker processes, training loop, export |
 | `evaluate.py` | deterministic evaluation |
+
+# Study 16 training (Learned Motion Matching)
+
+```bash
+npx rolldown tools/export-lmm-data.ts --platform node -o /tmp/export-lmm.mjs && node /tmp/export-lmm.mjs
+cd training && uv run python lmm/train_lmm.py        # ~16 min CPU; writes public/assets/lmm/networks.json
+```
+
+The export writes the study 09 database's features and poses to `training/lmm/data/` (not committed) and the
+runtime's skeleton and feature normalisation to `public/assets/lmm/model.json`. `train_lmm.py` trains the
+compressor/decompressor, then the stepper and projector, and exports the three runtime networks at half precision.

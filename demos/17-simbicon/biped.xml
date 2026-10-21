@@ -1,0 +1,74 @@
+<!--
+  Study 17 biped: a 7-body, 70 kg humanoid lower body with a heavy torso, torque-driven (no position servos):
+  every joint torque comes from the SIMBICON controller in simbicon.ts. MuJoCo frame: x forward, y left, z up.
+
+  Joint signs, chosen so the controller reads like the paper: hip_flex +  = thigh forward, knee + = bend,
+  ankle_pitch + = toes up, hip_abd + = leg out to its own side (y for the left leg, −y for the right),
+  ankle_roll follows the same side convention.
+-->
+<mujoco model="simbicon-biped">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.0005" integrator="implicitfast" iterations="30" ls_iterations="20"/>
+
+  <default>
+    <joint damping="0.5" armature="0.02" limited="true"/>
+    <geom contype="2" conaffinity="1" friction="1 0.02 0.01" condim="3"/>
+    <motor ctrllimited="true"/>
+  </default>
+
+  <worldbody>
+    <geom name="floor" type="plane" size="0 0 0.05" contype="1" conaffinity="2" friction="1 0.02 0.01"/>
+    <body name="torso" pos="0 0 1.0">
+      <freejoint name="root"/>
+      <geom name="pelvis" type="box" size="0.09 0.14 0.07" mass="12"/>
+      <geom name="chest" type="capsule" fromto="0 0 0.08 0 0 0.5" size="0.13" mass="28"/>
+      <geom name="head" type="sphere" pos="0 0 0.68" size="0.1" mass="5"/>
+
+      <body name="L_thigh" pos="0 0.1 -0.07">
+        <joint name="L_hip_abd" axis="1 0 0" range="-0.6 0.8"/>
+        <joint name="L_hip_flex" axis="0 -1 0" range="-1.2 2.0"/>
+        <joint name="L_hip_rot" axis="0 0 1" range="-0.8 0.8"/>
+        <geom type="capsule" fromto="0 0 0 0 0 -0.42" size="0.06" mass="8"/>
+        <body name="L_shin" pos="0 0 -0.44">
+          <joint name="L_knee" axis="0 1 0" range="0 2.6"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.4" size="0.045" mass="4"/>
+          <body name="L_foot" pos="0 0 -0.43">
+            <joint name="L_ankle_pitch" axis="0 -1 0" range="-0.9 0.7"/>
+            <joint name="L_ankle_roll" axis="1 0 0" range="-0.4 0.4"/>
+            <geom name="L_foot" type="box" pos="0.05 0 -0.025" size="0.12 0.05 0.025" mass="1"/>
+          </body>
+        </body>
+      </body>
+      <body name="R_thigh" pos="0 -0.1 -0.07">
+        <joint name="R_hip_abd" axis="-1 0 0" range="-0.6 0.8"/>
+        <joint name="R_hip_flex" axis="0 -1 0" range="-1.2 2.0"/>
+        <joint name="R_hip_rot" axis="0 0 -1" range="-0.8 0.8"/>
+        <geom type="capsule" fromto="0 0 0 0 0 -0.42" size="0.06" mass="8"/>
+        <body name="R_shin" pos="0 0 -0.44">
+          <joint name="R_knee" axis="0 1 0" range="0 2.6"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.4" size="0.045" mass="4"/>
+          <body name="R_foot" pos="0 0 -0.43">
+            <joint name="R_ankle_pitch" axis="0 -1 0" range="-0.9 0.7"/>
+            <joint name="R_ankle_roll" axis="-1 0 0" range="-0.4 0.4"/>
+            <geom name="R_foot" type="box" pos="0.05 0 -0.025" size="0.12 0.05 0.025" mass="1"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="L_hip_abd" joint="L_hip_abd" ctrlrange="-400 400"/>
+    <motor name="L_hip_flex" joint="L_hip_flex" ctrlrange="-400 400"/>
+    <motor name="L_hip_rot" joint="L_hip_rot" ctrlrange="-200 200"/>
+    <motor name="L_knee" joint="L_knee" ctrlrange="-400 400"/>
+    <motor name="L_ankle_pitch" joint="L_ankle_pitch" ctrlrange="-200 200"/>
+    <motor name="L_ankle_roll" joint="L_ankle_roll" ctrlrange="-100 100"/>
+    <motor name="R_hip_abd" joint="R_hip_abd" ctrlrange="-400 400"/>
+    <motor name="R_hip_flex" joint="R_hip_flex" ctrlrange="-400 400"/>
+    <motor name="R_hip_rot" joint="R_hip_rot" ctrlrange="-200 200"/>
+    <motor name="R_knee" joint="R_knee" ctrlrange="-400 400"/>
+    <motor name="R_ankle_pitch" joint="R_ankle_pitch" ctrlrange="-200 200"/>
+    <motor name="R_ankle_roll" joint="R_ankle_roll" ctrlrange="-100 100"/>
+  </actuator>
+</mujoco>
