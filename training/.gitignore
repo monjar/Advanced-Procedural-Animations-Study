@@ -2,3 +2,5 @@ runs/
 .venv/
 __pycache__/
 lmm/data/
+mimic/takes.json
+MUJOCO_LOG.TXT

@@ -70,6 +70,8 @@ class PPO:
         lam: float = 0.95,
         max_grad_norm: float = 1.0,
         desired_kl: float = 0.01,
+        min_lr: float = 1e-5,
+        max_lr: float = 1e-2,
     ):
         self.ac = ac
         self.lr = lr
@@ -78,6 +80,7 @@ class PPO:
         self.value_coef, self.entropy_coef = value_coef, entropy_coef
         self.gamma, self.lam = gamma, lam
         self.max_grad_norm, self.desired_kl = max_grad_norm, desired_kl
+        self.min_lr, self.max_lr = min_lr, max_lr
 
     @torch.no_grad()
     def act(self, obs: torch.Tensor, buf: RolloutBuffer) -> torch.Tensor:
@@ -127,9 +130,9 @@ class PPO:
                         dim=-1,
                     ).mean()
                     if kl > self.desired_kl * 2:
-                        self.lr = max(1e-5, self.lr / 1.5)
+                        self.lr = max(self.min_lr, self.lr / 1.5)
                     elif 0 < kl < self.desired_kl / 2:
-                        self.lr = min(1e-2, self.lr * 1.5)
+                        self.lr = min(self.max_lr, self.lr * 1.5)
                     for g in self.opt.param_groups:
                         g["lr"] = self.lr
                 ratio = torch.exp(lp - old_lp[idx])
