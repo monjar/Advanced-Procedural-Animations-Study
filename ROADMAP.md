@@ -1,6 +1,7 @@
 # Roadmap
 
-Fifteen interactive studies, ordered so that each tier reuses the systems built in the previous one.
+Nineteen interactive studies, ordered so that each tier reuses the systems built in the previous one; 16–19
+go beyond the original plan.
 Every study ships as its own page in the showcase site with live controls, debug visualisation and a
 technical write-up.
 
@@ -21,6 +22,10 @@ technical write-up.
 | 13 | RL Locomotion Policy                     | Learned       | 10          | live    |
 | 14 | LLM-Directed Animation                   | Learned       | 02–07       | live    |
 | 15 | Procedural Face (stretch)                | Expressive    | 01, 02      | live    |
+| 16 | Learned Motion Matching                  | Beyond        | 09          | live    |
+| 17 | Physics-Based Walker (SIMBICON)          | Beyond        | 10, 13      | live    |
+| 18 | Procedural Hands & Grasping              | Beyond        | 02, 13      | live    |
+| 19 | Character Crowds (ORCA)                  | Beyond        | 07, 11      | live    |
 
 ---
 
@@ -171,6 +176,40 @@ technical write-up.
 - **Deviation:** gaze interval distributions are tuned to published proportions, not fitted to Eyes Alive's data.
 - **References:** S. Lee, J. Badler, N. Badler, *Eyes Alive* (SIGGRAPH 2002); K. Ruhland et al. (2015); Peterson & Barney (1952).
 
+## Beyond the Roadmap
+
+### 16 · Learned Motion Matching
+- **Built:** Holden et al.'s compressor/decompressor, stepper and projector (`training/lmm/train_lmm.py`, ~16 min on a
+  CPU) replacing study 09's database at runtime, with the same controller, inertialization and foot locking; both run
+  side by side on the same input.
+- **Measured:** walk/run 1.30/3.19 m/s vs 1.30/3.23; p99 per-step joint change 10.2° vs 17.7°; 0.73 MB of
+  half-precision weights vs 7.1 MB; but 0.26 vs 0.027 ms per step — at two minutes of mocap the exact search is
+  faster; LMM pays off as data grows.
+- **References:** D. Holden, O. Kanoun, M. Perepichka, T. Popa, *Learned Motion Matching* (SIGGRAPH 2020).
+
+### 17 · Physics-Based Walker
+- **Built:** SIMBICON on a 71 kg MuJoCo biped: per-state PD targets, balance feedback θ = θ₀ + c_d·d + c_v·v in both
+  planes, world-frame torso pitch/roll/yaw through the stance hip, steering, two gaits; drag and shove it.
+- **Measured:** 0.38 / 0.91 m/s; shoves survived on every trial up to 0.5 m/s sideways; no falls on the steering
+  course; without balance feedback it falls.
+- **References:** K. Yin, K. Loken, M. van de Panne, *SIMBICON* (SIGGRAPH 2007).
+
+### 18 · Procedural Hands & Grasping
+- **Built:** a 21-joint hand; GraspIt!-style planner (approach, slide in, close; pinches along a joint-space synergy)
+  over SDF objects; Ferrari–Canny ε with soft-finger contacts, opposition, lift quality; every grasp lifted 20 cm in
+  MuJoCo with the hand welded to a mocap target.
+- **Measured:** top-5 grasps hold 23/30; 55 % of force-closure grasps hold vs 4 % without; among force-closure grasps
+  opposition predicts the lift (AUC 0.73), ε's magnitude does not (0.49); a mocap-parented hand lifts 0/30.
+- **References:** A. Miller, P. Allen, *GraspIt!* (2004); C. Ferrari, J. Canny (1992); M. Ciocarlie, P. Allen (2009).
+
+### 19 · Character Crowds
+- **Built:** ORCA ported from RVO2 (agents, polygonal obstacles, 2-D/3-D linear programs) and Helbing's social-force
+  model on the same waypoint navigation; four scenes; instanced procedural walkers with speed-driven gait; per-agent
+  velocity-space view.
+- **Measured:** at walking pace ORCA clears every scene sooner (circle swap 21 vs 33 s) with less wiggle; hurried
+  through a door, social forces push through faster (25 vs 37 s at 3×) with bodies 7.7 cm deep in each other.
+- **References:** J. van den Berg et al., *Reciprocal n-Body Collision Avoidance* (2011); D. Helbing et al. (1995, 2000).
+
 ---
 
 ## Definition of done (every study)
@@ -181,7 +220,7 @@ technical write-up.
 
 ## Phasing
 - **P0** scaffold: site shell, gallery, demo template, CI, Pages deploy.
-- **P1** 01–04 · **P2** 05–08 · **P3** 09 · **P4** 10–12 · **P5** 13–15.
+- **P1** 01–04 · **P2** 05–08 · **P3** 09 · **P4** 10–12 · **P5** 13–15 · **P6** 16–19.
 
 ## Assets
 - No Mixamo (raw assets cannot be redistributed). CC0 meshes (Quaternius, Kenney) or stylised capsule rigs.
