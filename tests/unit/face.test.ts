@@ -152,6 +152,46 @@ describe('Gaze model', () => {
     expect(Math.abs(g.gaze.yaw - 35)).toBeLessThan(1.5);
   });
 
+  it('the head stays steady when the partner or target is beyond the eyes\' reach', () => {
+    // Regression: the head used to swing back and forth (tens of degrees, several times a second) when seen from
+    // far below or above, and to tremble when following a cursor near the top or bottom of the screen.
+    const reversalsPerSecond = (setup: (g: GazeModel) => void) => {
+      const g = new GazeModel(3);
+      setup(g);
+      const seconds = 20;
+      let reversals = 0;
+      let lastV = 0;
+      let prev = { ...g.head };
+      for (let i = 0; i < seconds * 60; i++) {
+        g.update(1 / 60);
+        for (const k of ['yaw', 'pitch'] as const) {
+          const v = (g.head[k] - prev[k]) * 60;
+          if (Math.abs(v) > 3) {
+            if (k === 'pitch' && lastV !== 0 && Math.sign(v) !== Math.sign(lastV)) reversals++;
+            if (k === 'pitch') lastV = v;
+          }
+        }
+        prev = { ...g.head };
+      }
+      return reversals / seconds;
+    };
+    for (const partner of [{ yaw: 5, pitch: -45 }, { yaw: 5, pitch: 55 }, { yaw: 90, pitch: 0 }]) {
+      const r = reversalsPerSecond((g) => {
+        g.mode = 'listening';
+        Object.assign(g.partner, partner);
+      });
+      expect(r, JSON.stringify(partner)).toBeLessThan(1);
+    }
+    for (const pitch of [60, -65]) {
+      const r = reversalsPerSecond((g) => {
+        g.mode = 'track';
+        g.target.yaw = -8;
+        g.target.pitch = pitch;
+      });
+      expect(r, `track ${pitch}`).toBeLessThan(0.2);
+    }
+  });
+
   it('tracks a moving target with pursuit and catch-up saccades', () => {
     const g = new GazeModel(9);
     g.mode = 'track';
