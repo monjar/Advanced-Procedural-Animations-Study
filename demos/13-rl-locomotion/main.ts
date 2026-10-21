@@ -8,6 +8,7 @@ import { Keyboard } from '../../src/input/keyboard';
 import { createDemoFrame } from '../../src/ui/demoFrame';
 import { GaitChart } from '../../src/ui/gaitChart';
 import { LinePlot } from '../../src/ui/plot';
+import { MujocoView } from '../../src/physics/mujocoView';
 import { Mlp, type PolicyFile } from './policy';
 import { NUM_ACT, NUM_OBS, QuadrupedSim } from './sim';
 import writeup from './README.md?raw';
@@ -32,71 +33,20 @@ const CONTROL_DT = policy.dt * policy.decimation; // 50 Hz
 
 // ---------------------------------------------------------------------------------------- rendering
 
-// MuJoCo is z-up; render its geoms in a group rotated so that z → three's y.
-const world = new THREE.Group();
-world.rotation.x = -Math.PI / 2;
-app.scene.add(world);
 const model = sim.model;
 const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2d333d, roughness: 0.45, metalness: 0.35 });
 const legMat = new THREE.MeshStandardMaterial({ color: 0xff8a3d, roughness: 0.5 });
 const footMat = new THREE.MeshStandardMaterial({ color: 0x1b1e24, roughness: 0.7 });
-const geoms: { index: number; mesh: THREE.Mesh }[] = [];
+const view = new MujocoView(model, sim.data, (_g, type) => (type === 6 || type === 5 ? bodyMat : type === 2 ? footMat : legMat));
+app.scene.add(view.group);
+const geoms = view.meshes.map((m) => ({ index: m.geom, mesh: m.mesh }));
 const types = model.geom_type as Int32Array;
-const sizes = model.geom_size as Float64Array;
-for (let g = 0; g < model.ngeom; g++) {
-  const t = types[g];
-  const [s0, s1, s2] = [sizes[g * 3], sizes[g * 3 + 1], sizes[g * 3 + 2]];
-  let geo: THREE.BufferGeometry | null = null;
-  let mat = legMat;
-  if (t === 6) {
-    geo = new THREE.BoxGeometry(2 * s0, 2 * s1, 2 * s2);
-    mat = bodyMat;
-  } else if (t === 2) {
-    geo = new THREE.SphereGeometry(s0, 16, 12);
-    mat = footMat;
-  } else if (t === 3) geo = new THREE.CapsuleGeometry(s0, 2 * s1, 6, 12).rotateX(Math.PI / 2);
-  else if (t === 5) {
-    geo = new THREE.CylinderGeometry(s0, s0, 2 * s1, 20).rotateX(Math.PI / 2);
-    mat = bodyMat;
-  }
-  if (!geo) continue; // the floor plane: the app's ground stands in for it
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.castShadow = true;
-  mesh.matrixAutoUpdate = false;
-  world.add(mesh);
-  geoms.push({ index: g, mesh });
-}
 // A face on the trunk so the heading reads at a glance.
 const visor = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.05), new THREE.MeshStandardMaterial({ color: 0x5fb3ff, emissive: 0x1d4f80 }));
 visor.position.set(0.19, 0, 0.01);
 geoms.find((g) => types[g.index] === 6)!.mesh.add(visor);
-
-// Render interpolation between 50 Hz control steps.
-const prevPos = new Float64Array(model.ngeom * 3);
-const prevMat = new Float64Array(model.ngeom * 9);
-const snapshot = () => {
-  prevPos.set(sim.data.geom_xpos as Float64Array);
-  prevMat.set(sim.data.geom_xmat as Float64Array);
-};
-snapshot();
-const qa = new THREE.Quaternion();
-const qb = new THREE.Quaternion();
-const m4 = new THREE.Matrix4();
-const pa = new THREE.Vector3();
-const pb = new THREE.Vector3();
-const toQuat = (m: ArrayLike<number>, o: number, q: THREE.Quaternion) =>
-  q.setFromRotationMatrix(m4.set(m[o], m[o + 1], m[o + 2], 0, m[o + 3], m[o + 4], m[o + 5], 0, m[o + 6], m[o + 7], m[o + 8], 0, 0, 0, 0, 1));
-function drawRobot(alpha: number): void {
-  const pos = sim.data.geom_xpos as Float64Array;
-  const mat = sim.data.geom_xmat as Float64Array;
-  for (const { index: g, mesh } of geoms) {
-    pa.set(prevPos[g * 3], prevPos[g * 3 + 1], prevPos[g * 3 + 2]);
-    pb.set(pos[g * 3], pos[g * 3 + 1], pos[g * 3 + 2]);
-    toQuat(prevMat, g * 9, qa);
-    toQuat(mat, g * 9, qb);
-    mesh.matrix.compose(pa.lerp(pb, alpha), qa.slerp(qb, alpha), mesh.scale);
-  }
-}
+const snapshot = () => view.snapshot();
+const drawRobot = (alpha: number) => view.update(alpha);
 
 // ---------------------------------------------------------------------------------------- control
 
