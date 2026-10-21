@@ -1,0 +1,10 @@
+[project]
+name = "study13-training"
+version = "0.1.0"
+description = "Offline PPO training for study 13 (RL locomotion policy), exported to the browser."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "mujoco==3.15.0",
+  "numpy>=1.26",
+  "torch>=2.4",
+]
