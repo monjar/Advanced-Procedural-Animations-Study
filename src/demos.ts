@@ -243,9 +243,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '26-phase-locomotion',
     title: 'Phase-Functioned Locomotion',
     tier: 'Further Studies',
-    summary: 'A phase-functioned neural network learns terrain-adaptive walking from mocap.',
+    summary: 'A phase-functioned network (PFNN) and a plain one of the same size learn CMU locomotion; run side by side, the plain one blurs.',
     tags: ['PFNN', 'phase', 'learned'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '27',
