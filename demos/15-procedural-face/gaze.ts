@@ -33,6 +33,8 @@ export interface SaccadeEvent {
 }
 
 export const EYE_RANGE = { yaw: 40, pitch: 28 };
+/** How far the head turns and tilts (the body doesn't move); the eyes cover the rest, up to their own range. */
+export const HEAD_RANGE = { yaw: [-75, 75], pitch: [-40, 45] } as const;
 const HEAD_THRESHOLD = 12;
 const MEAN_SACCADE = 7.6; // degrees: P(A ≤ 15°) = 1 − e^(−15/7.6) ≈ 0.86
 
@@ -130,12 +132,13 @@ export class GazeModel {
     if (this.events.length > 4000) this.events.shift();
     if (kind !== 'micro') {
       // The head takes over most of what lies beyond the eyes' comfortable range.
-      const headShare = (a: number, h: number) => {
+      // (The head pitches less than it turns: 0.6 of the excess vs 0.75.)
+      const headShare = (a: number, h: number, share: number) => {
         const rel = a - h;
-        return Math.abs(rel) > HEAD_THRESHOLD ? h + (rel - Math.sign(rel) * HEAD_THRESHOLD * 0.6) * 0.75 : h;
+        return Math.abs(rel) > HEAD_THRESHOLD ? h + (rel - Math.sign(rel) * HEAD_THRESHOLD * 0.6) * share : h;
       };
-      this.headGoal.yaw = headShare(goal.yaw, this.headGoal.yaw);
-      this.headGoal.pitch = headShare(goal.pitch, this.headGoal.pitch) * 0.8;
+      this.headGoal.yaw = headShare(goal.yaw, this.headGoal.yaw, 0.75);
+      this.headGoal.pitch = headShare(goal.pitch, this.headGoal.pitch, 0.6);
       // Gaze-evoked blinks: rare for small shifts, likely for large ones.
       if (this.rng.chance(Math.min(0.85, Math.max(0, (amp - 12) / 35)))) this.startBlink();
     }
@@ -219,8 +222,13 @@ export class GazeModel {
         const k = 1 - Math.exp(-dt * 6);
         this.gaze.yaw += (this.target.yaw - this.gaze.yaw) * k;
         this.gaze.pitch += (this.target.pitch - this.gaze.pitch) * k;
-        this.headGoal.yaw = Math.abs(this.target.yaw - this.headGoal.yaw) > HEAD_THRESHOLD ? this.target.yaw * 0.6 : this.headGoal.yaw;
-        this.headGoal.pitch = Math.abs(this.target.pitch - this.headGoal.pitch) > HEAD_THRESHOLD ? this.target.pitch * 0.5 : this.headGoal.pitch;
+        // The head follows a target that strays past the threshold, but only ever toward it: the range rule
+        // below may already have taken it further, and resetting it back each frame made the two fight.
+        for (const [k, share] of [['yaw', 0.6], ['pitch', 0.5]] as const) {
+          const off = this.target[k] - this.headGoal[k];
+          const want = this.target[k] * share - this.headGoal[k];
+          if (Math.abs(off) > HEAD_THRESHOLD && Math.sign(want) === Math.sign(off)) this.headGoal[k] += want;
+        }
       }
       // Fixational eye movements: slow drift plus microsaccades that undo it.
       this.drift.yaw += this.rng.normal() * 0.25 * Math.sqrt(dt);
@@ -248,14 +256,16 @@ export class GazeModel {
     }
 
     // --- Eyes in the head: gaze minus head, within the oculomotor range. While the head catches up after a
-    // gaze shift the eyes counter-rotate (VOR); at the range limit the head is forced to make up the rest.
-    this.eye.yaw = Math.max(-EYE_RANGE.yaw, Math.min(EYE_RANGE.yaw, this.gaze.yaw - this.head.yaw));
-    this.eye.pitch = Math.max(-EYE_RANGE.pitch, Math.min(EYE_RANGE.pitch, this.gaze.pitch - this.head.pitch));
-    const overYaw = this.gaze.yaw - this.head.yaw - this.eye.yaw;
-    const overPitch = this.gaze.pitch - this.head.pitch - this.eye.pitch;
-    if (overYaw !== 0 || overPitch !== 0) {
-      this.headGoal.yaw += overYaw;
-      this.headGoal.pitch += overPitch;
+    // gaze shift the eyes counter-rotate (VOR). A gaze beyond what the eyes can reach from the head's *goal*
+    // moves the goal just far enough (with a margin). Comparing with the goal, not the lagging head, matters:
+    // adding the shortfall every frame while the head was still on its way made it overshoot and swing back and
+    // forth whenever the partner sat far above, below or to the side.
+    for (const k of ['yaw', 'pitch'] as const) {
+      const reach = EYE_RANGE[k] * 0.85;
+      const rel = this.gaze[k] - this.headGoal[k];
+      if (Math.abs(rel) > reach) this.headGoal[k] = this.gaze[k] - Math.sign(rel) * reach;
+      this.headGoal[k] = Math.max(HEAD_RANGE[k][0], Math.min(HEAD_RANGE[k][1], this.headGoal[k]));
+      this.eye[k] = Math.max(-EYE_RANGE[k], Math.min(EYE_RANGE[k], this.gaze[k] - this.head[k]));
     }
 
     // --- Blinks: closing ≈ 70 ms, closed ≈ 40 ms, opening ≈ 160 ms (opening is the slow part).
