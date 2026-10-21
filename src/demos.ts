@@ -252,9 +252,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '27-mm-crowds',
     title: 'Motion-Matched Crowds',
     tier: 'Further Studies',
-    summary: 'Study 19\'s ORCA crowds driven by study 16\'s learned motion matching instead of procedural walkers.',
+    summary: "Study 19's ORCA crowds with study 09's motion matching for bodies: collisions against foot sliding, and what each body model costs.",
     tags: ['motion matching', 'crowds', 'LMM'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '28',

@@ -175,6 +175,33 @@ export class Crowd {
     this.measure(oldVel, dt);
   }
 
+  /**
+   * ORCA velocities for this step without moving anyone, for bodies that move themselves (study 27: animated
+   * characters that cannot change velocity instantly). Pair with `adopt`.
+   */
+  plan(dt: number): Vec2[] {
+    const prefs = this.agents.map((a) => {
+      const p = this.preferredVelocity(a);
+      const ang = this.rng.next() * Math.PI * 2;
+      const mag = this.rng.next() * 0.01;
+      a.preferred = { x: p.x + Math.cos(ang) * mag, y: p.y + Math.sin(ang) * mag };
+      return a.preferred;
+    });
+    const range = this.params.timeHorizonObst * this.params.maxSpeed;
+    return this.agents.map((a, i) => (a.gone ? { x: 0, y: 0 } : orcaVelocity(a, prefs[i], this.neighbours(a), nearbyObstacles(this.vertices, a.position, range + a.radius), this.params, dt)));
+  }
+
+  /** Take the bodies' actual positions after they moved, and measure (study 27). */
+  adopt(positions: Vec2[], dt: number): void {
+    const oldVel = this.agents.map((a) => ({ ...a.velocity }));
+    this.agents.forEach((a, i) => {
+      if (a.gone) return;
+      a.velocity = { x: (positions[i].x - a.position.x) / dt, y: (positions[i].y - a.position.y) / dt };
+      a.position = { ...positions[i] };
+    });
+    this.measure(oldVel, dt);
+  }
+
   private stepOrca(prefs: Vec2[], dt: number): void {
     const range = this.params.timeHorizonObst * this.params.maxSpeed;
     // All new velocities from the same old state, then all agents move (the reciprocity assumes this).
