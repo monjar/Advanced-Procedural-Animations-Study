@@ -68,11 +68,15 @@ app.renderer.domElement.addEventListener('pointermove', (e) => {
 });
 
 const tmp = new THREE.Vector3();
-const mid = new THREE.Vector3();
+/**
+ * The point between the eyes with the head at rest. Targets are measured from here, not from the eyes' current
+ * position: the head pivots at the neck, so turning it moves the eyes, and measuring from them fed the head's
+ * own motion back into its target.
+ */
+face.root.updateMatrixWorld(true);
+const mid = face.eyeMid(new THREE.Vector3());
 /** Direction from between the eyes to `p`, as yaw/pitch (degrees) in the body frame, plus its distance. */
 function anglesTo(p: THREE.Vector3): { yaw: number; pitch: number; dist: number } {
-  face.root.updateMatrixWorld(true);
-  face.eyeMid(mid);
   tmp.subVectors(p, mid);
   return {
     yaw: THREE.MathUtils.radToDeg(Math.atan2(tmp.x, tmp.z)),
@@ -291,7 +295,6 @@ app.onFrame((_alpha, frameDt) => {
 
   if (settings.showGaze) {
     face.root.updateMatrixWorld(true);
-    face.eyeMid(mid);
     const yaw = THREE.MathUtils.degToRad(gaze.gaze.yaw);
     const pitch = THREE.MathUtils.degToRad(gaze.gaze.pitch);
     tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));

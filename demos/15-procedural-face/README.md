@@ -17,7 +17,7 @@ up the eyes counter-rotate and the fixation holds — the vestibulo-ocular refle
 | saccade size | exponential, mean 7.6°, so 86 % are ≤ 15° | Bahill, Adler & Stark (1975) |
 | conversation | alternate mutual gaze (scanning eyes and mouth) and gaze aversion; listeners hold it longer | Argyle & Cook (1976) |
 | fixation | drift plus microsaccades (0.1–0.8°, ~1.4/s) | Martinez-Conde et al. (2004) |
-| head | joins shifts beyond ~12°; forced along at the oculomotor limit (±40° yaw, ±28° pitch) | Freedman & Sparks (1997) |
+| head | joins shifts beyond ~12°; forced along at the oculomotor limit (±40° yaw, ±28° pitch), within ±75° yaw, −40…45° pitch | Freedman & Sparks (1997) |
 | blinks | 17/min at rest, 26/min talking, 0.6 s refractory; gaze-evoked for large shifts; 70 ms close, 160 ms open | Bentivoglio et al. (1997) |
 | lids | the upper lid follows the eye's pitch — look down and it lowers | |
 
@@ -84,10 +84,24 @@ release smoothing traded a little jaw correlation (0.92 → 0.89) for closing th
   (they converge on near targets), with eyelid caps and pupils.
 - **Head motion.** Slow noise sway, nods on loudness onsets, and brows lifting with pitch rises (Cavé et al. 1996).
 
-Two bugs worth recording. The lip tubes were built with inward-facing triangles, so the GPU culled the near
-half and drew the far half behind the skin; a ray cast through the lips found only the tube's back wall.
-And the jaw first hinged far behind the head, swinging the chin back so that the mouth cavity showed through
-the skin; moving the hinge to where the real joint is fixed it.
+A few bugs worth recording.
+
+- **The head shook when seen from far above or below.** There were three feedback loops:
+  - When the eyes hit their range limit, the shortfall was added to the head's goal on every frame while the
+    head was still catching up, so it overshot.
+  - Each saccade also pulled the head's pitch goal 20 % back toward level, which put the eyes over the limit
+    again.
+  - Targets were measured from the eyes' current position. The head pivots at the neck, so turning it moved the
+    eyes, and the head's own motion shifted its target.
+
+  Now the goal moves just far enough to keep the target within the eyes' reach, judged against the goal rather
+  than the lagging head. Targets are measured from the eyes' rest position.
+- **The head trembled when following a cursor near the top or bottom of the screen.** Two rules for the head's
+  goal reset each other on alternate frames. Cursor tracking now only moves the goal toward the target.
+- **The lip tubes were built with inward-facing triangles.** The GPU culled the near half and drew the far
+  half behind the skin, so a ray cast through the lips found only the tube's back wall.
+- **The jaw first hinged far behind the head.** It swung the chin back, so the mouth cavity showed through the
+  skin. Moving the hinge to where the real joint is fixed it.
 
 ## Failure modes
 
