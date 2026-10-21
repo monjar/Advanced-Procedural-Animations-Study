@@ -29,13 +29,24 @@ write-up. The full list, techniques and references are in [ROADMAP.md](ROADMAP.m
 | 17 | [Physics-Based Walker](demos/17-simbicon/README.md) | SIMBICON in MuJoCo: balance feedback, world-frame torso control, steering, measured push envelopes |
 | 18 | [Procedural Hands & Grasping](demos/18-procedural-hands/README.md) | autograsp planner with pinch synergy, Ferrari–Canny ε and opposition, every grasp lifted in MuJoCo |
 | 19 | [Character Crowds](demos/19-character-crowds/README.md) | ORCA (RVO2 port) vs social forces on instanced procedural walkers: swaps, crossings, a door, a corridor |
+| 20 | [Snakes & Worms](demos/20-snakes/README.md) | slithering, sidewinding, peristalsis and inching from shape changes and anisotropic friction alone (Hu et al. 2009) |
+| 21 | [Physics-Based Mocap Tracking](demos/21-physics-mocap/README.md) | DeepMimic in MuJoCo: a 28-DoF humanoid performs a CMU walk and run with PPO; plain tracking falls in 1.2 s |
+| 22 | [Hair & Tentacles](demos/22-strands/README.md) | Cosserat rods in XPBD: ~400 hair strands, octopus bend propagation, a twisted rod buckling near Greenhill's load |
+| 23 | [Spacetime Constraints](demos/23-spacetime/README.md) | Witkin & Kass's jumping lamp by CMA-ES + Levenberg–Marquardt; anticipation emerges, hand-keyed jumps need 2–3× its weight from nowhere |
+| 24 | [Creature Creator](demos/24-creature-creator/README.md) | user-built bodies get a gait, Froude-scaled strides, footholds and secondary motion with nothing authored |
+| 25 | [Procedural Climbing](demos/25-climbing/README.md) | weighted A* over limb-to-hold stances with a reach-solved torso; 24/24 random walls |
+| 26 | [Phase-Functioned Locomotion](demos/26-phase-locomotion/README.md) | PFNN against a plain network on the same data, closed loop: the plain one blurs the run toward the walk |
+| 27 | [Motion-Matched Crowds](demos/27-mm-crowds/README.md) | ORCA with mocap bodies: animation- vs simulation-driven coupling, body overlap traded against foot sliding |
+| 28 | [Webcam Puppeteering](demos/28-webcam-puppet/README.md) | MediaPipe pose in the browser; One Euro filter, retargeting and walking from the feet, scored against mocap |
 
 The studies are tested headlessly, not only eyeballed: the hexapod's wall traversal, the quadruped's gait
 blending, the mocap foot penetration, motion matching under scripted input, the ragdoll's hit recovery, the GPU
 boids against a CPU reference, the evolved creatures' determinism, the hexapod standing still, the RL policy's
 browser simulator against the training one, the LLM programs' outcomes, the lip-sync against ground truth, the
-learned networks against the database, the walker's push envelope, every planned grasp's physical lift and the
-crowds' collisions are all checked by unit or browser tests.
+learned networks against the database, the walker's push envelope, every planned grasp's physical lift, the
+crowds' collisions, the snakes' friction sweep, the imitation policies against PyTorch, the rods against exact
+deflections, the jumps' contact forces, every climbing stance's reach and the puppet's filters and footsteps
+against mocap are all checked by unit or browser tests.
 
 ## Run locally
 

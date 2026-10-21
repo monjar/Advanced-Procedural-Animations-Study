@@ -261,9 +261,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '28-webcam-puppet',
     title: 'Webcam Puppeteering',
     tier: 'Further Studies',
-    summary: 'Your pose from the webcam, filtered and retargeted onto a character with IK and foot locking.',
+    summary: 'Your pose from the webcam, filtered, retargeted onto any body, and walked across the floor from the feet.',
     tags: ['pose estimation', 'retargeting', 'filtering'],
-    status: 'planned',
+    status: 'live',
   },
 ];
 

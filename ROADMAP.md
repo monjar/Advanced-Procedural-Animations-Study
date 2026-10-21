@@ -1,7 +1,7 @@
 # Roadmap
 
-Nineteen interactive studies, ordered so that each tier reuses the systems built in the previous one; 16–19
-go beyond the original plan.
+Twenty-eight interactive studies, ordered so that each tier reuses the systems built in the previous one;
+16–28 go beyond the original plan.
 Every study ships as its own page in the showcase site with live controls, debug visualisation and a
 technical write-up.
 
@@ -26,6 +26,15 @@ technical write-up.
 | 17 | Physics-Based Walker (SIMBICON)          | Beyond        | 10, 13      | live    |
 | 18 | Procedural Hands & Grasping              | Beyond        | 02, 13      | live    |
 | 19 | Character Crowds (ORCA)                  | Beyond        | 07, 11      | live    |
+| 20 | Snakes & Worms                           | Further       | –           | live    |
+| 21 | Physics-Based Mocap Tracking             | Further       | 08, 13      | live    |
+| 22 | Hair & Tentacles (Cosserat)              | Further       | 04          | live    |
+| 23 | Spacetime Constraints                    | Further       | –           | live    |
+| 24 | Creature Creator                         | Further       | 01, 02, 06  | live    |
+| 25 | Procedural Climbing                      | Further       | 02          | live    |
+| 26 | Phase-Functioned Locomotion              | Further       | 09, 16      | live    |
+| 27 | Motion-Matched Crowds                    | Further       | 09, 16, 19  | live    |
+| 28 | Webcam Puppeteering                      | Further       | 08          | live    |
 
 ---
 
@@ -209,6 +218,75 @@ technical write-up.
   through a door, social forces push through faster (25 vs 37 s at 3×) with bodies 7.7 cm deep in each other.
 - **References:** J. van den Berg et al., *Reciprocal n-Body Collision Avoidance* (2011); D. Helbing et al. (1995, 2000).
 
+
+## Further Studies
+
+### 20 · Snakes & Worms
+- **Built:** Hu et al.'s slithering model (centre-of-mass and angular-momentum dynamics under anisotropic Coulomb
+  friction); four creatures that only change shape: serpenoid undulation, sidewinding, an earthworm's peristalsis,
+  an inchworm.
+- **Measured:** equal friction goes nowhere; on corn-snake friction, lifting the bends triples the speed (0.05 →
+  0.15 m/s); sidewinding 0.45 m/s at 87–97° to the body; the worm 26 mm/s, only with backward-gripping bristles.
+- **References:** D. Hu, J. Nirody, T. Scott, M. Shelley, *The mechanics of slithering locomotion* (PNAS 2009).
+
+### 21 · Physics-Based Mocap Tracking
+- **Built:** a 28-DoF MuJoCo humanoid built from the CMU skeleton; DeepMimic's imitation reward, reference-state
+  initialisation and early termination; PPO with residual actions and normalised observations; runs in MuJoCo WASM.
+- **Measured:** walk 1.10 m/s at 0.9° RMS pose error, indefinitely; plain PD tracking falls at 1.23 s; shoves of
+  0.7 m/s survived from every side.
+- **References:** X. B. Peng, P. Abbeel, S. Levine, M. van de Panne, *DeepMimic* (SIGGRAPH 2018).
+
+### 22 · Hair & Tentacles
+- **Built:** position-and-orientation Cosserat rods in XPBD (stretch–shear, bend–twist); a head of ~400 strands, an
+  octopus reaching by bend propagation, a twisted rod.
+- **Measured:** converged deflection exact (1.00×), under-converged up to 6×; a factor of two in the published
+  stretch–shear update; twist buckling within 4–8% of Greenhill's load in the best runs.
+- **References:** T. Kugelstadt, E. Schömer, *Position and Orientation Based Cosserat Rods* (SCA 2016).
+
+### 23 · Spacetime Constraints
+- **Built:** Witkin & Kass's lamp: B-spline joint trajectories, minimum torque, Newtonian flight by construction,
+  floor contact within friction and sole; CMA-ES then Levenberg–Marquardt; live optimisation in a worker.
+- **Measured:** hop, step and long jump land within 3–18 mm; a 55–65 cm crouch emerges unasked; the hand-keyed
+  versions need 2.2–2.7× the lamp's weight from nowhere; a hurdle failed (local minimum).
+- **References:** A. Witkin, M. Kass, *Spacetime Constraints* (SIGGRAPH 1988).
+
+### 24 · Creature Creator
+- **Built:** a body editor (spine, leg pairs, head, tail); gait from leg count (Hildebrand), stride and frequency
+  from Froude similarity, duty factor from speed, footholds, two-bone legs, a spine that follows the head.
+- **Measured:** static stability follows the biology unprogrammed (centipede 89–100%, trotting quadruped 0%);
+  feet out of reach ≤ 2.8% of stance, except a fast spider (9.6%).
+- **References:** C. Hecker et al., *Real-time Motion Retargeting to Highly Varied User-Created Morphologies*
+  (SIGGRAPH 2008); R. McN. Alexander (1976).
+
+### 25 · Procedural Climbing
+- **Built:** weighted A* over (hand, hand, foot, foot) stances; a torso solved for reach by projected Gauss–Seidel;
+  three-limb support checked during every move; two-bone limbs.
+- **Measured:** 24/24 random walls at 32 cm spacing in 0.58 s; denser walls are *harder* (7/24 at 25 cm).
+- **References:** K. Kalisiak, M. van de Panne (2001); P. Hart, N. Nilsson, B. Raphael (1968).
+
+### 26 · Phase-Functioned Locomotion
+- **Built:** PFNN (four weight sets on a cyclic Catmull–Rom spline of the phase) and a plain network of the same
+  layers, trained identically on the CMU data, running side by side.
+- **Measured:** one-step error 0.144 vs 0.137 (plain slightly better), but closed loop the plain network's run
+  knees reach 83° against PFNN's 93° and the mocap's 107°; input noise was needed for control.
+- **References:** D. Holden, T. Komura, J. Saito, *Phase-Functioned Neural Networks* (SIGGRAPH 2017).
+
+### 27 · Motion-Matched Crowds
+- **Built:** study 19's ORCA crowds with study 09/16 bodies, coupled animation-driven (bodies move, ORCA plans) or
+  simulation-driven (ORCA moves, bodies pulled at most k× their speed).
+- **Measured:** no free setting: animation-driven bodies overlap (41–84 pair·s); collision-free needs a pull of
+  about 4× and doubles foot sliding (28–32 vs 14–15 cm/s); 16 µs per person with the database, ~300 µs learned.
+- **References:** J. van den Berg et al. (2011); S. Clavet, *Motion Matching* (GDC 2016).
+
+### 28 · Webcam Puppeteering
+- **Built:** MediaPipe Pose Landmarker in the browser (loaded on request); a simulated tracker from CMU mocap for
+  scoring; One Euro filter; direction-only retargeting onto any proportions; locomotion from soft-weighted,
+  stride-gated planted feet.
+- **Measured:** One Euro matches a fast EMA's error moving (2.53 cm walking) with a third less jitter standing;
+  walks end within 2–36 cm of the person over 2–4.4 m; standing still drifts 13 cm in 9.5 s, against 2.3 m with a
+  hard foot switch; runs come up a third short.
+- **References:** G. Casiez, N. Roussel, D. Vogel, *1€ Filter* (CHI 2012); V. Bazarevsky et al., *BlazePose* (2020).
+
 ---
 
 ## Definition of done (every study)
@@ -219,7 +297,7 @@ technical write-up.
 
 ## Phasing
 - **P0** scaffold: site shell, gallery, demo template, CI, Pages deploy.
-- **P1** 01–04 · **P2** 05–08 · **P3** 09 · **P4** 10–12 · **P5** 13–15 · **P6** 16–19.
+- **P1** 01–04 · **P2** 05–08 · **P3** 09 · **P4** 10–12 · **P5** 13–15 · **P6** 16–19 · **P7** 20–28.
 
 ## Assets
 - No Mixamo (raw assets cannot be redistributed). CC0 meshes (Quaternius, Kenney) or stylised capsule rigs.
