@@ -44,14 +44,19 @@ export class StaticRaycaster {
    * closed solid (or under the terrain). Used to reject footholds on faces buried inside other geometry.
    */
   insideAlong(p: THREE.Vector3, dir: THREE.Vector3, far: number): boolean {
+    return this.exitDistance(p, dir, far) >= 0;
+  }
+
+  /** How far along `dir` a point inside a solid (see `insideAlong`) has to move to leave it; −1 if not inside. */
+  exitDistance(p: THREE.Vector3, dir: THREE.Vector3, far: number): number {
     this.count++;
     this.raycaster.set(p, dir);
     this.raycaster.far = far;
     this.hits.length = 0;
     this.raycaster.intersectObjects(this.proxies, false, this.hits);
     const h = this.hits[0];
-    if (!h || !h.face) return false;
-    return this.n.copy(h.face.normal).transformDirection(h.object.matrixWorld).dot(dir) > 0;
+    if (!h || !h.face) return -1;
+    return this.n.copy(h.face.normal).transformDirection(h.object.matrixWorld).dot(dir) > 0 ? h.distance : -1;
   }
 
   cast(origin: THREE.Vector3, direction: THREE.Vector3, far: number, out?: Hit): Hit | null {

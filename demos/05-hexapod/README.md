@@ -62,8 +62,47 @@ each candidate foothold along its normal now rejects it if it first meets the ba
 corners; and nothing keeping
 the abdomen out of the floor when the body pitches onto a wall.
 
+## Standing still
+
+The first version walked well and stood badly: stopped anywhere near a crate, the ramp or the wall, its legs
+never stopped moving. An audit that walks, stops, settles and then watches the stance (30 stops all over the
+playground, at 30–240 Hz) found four separate feedback loops, each invisible on flat ground:
+
+1. **Stepping at the unreachable.** The down probe picked the ground beside a crate a metre below the hip; the
+   out-of-reach rule stepped the leg to the same foothold, which was still out of reach, forever. Standing
+   feet now prefer a foothold in reach (the search moves in toward the body and finds the crate top), and the
+   emergency step only goes somewhere *else*.
+2. **Foothold ↔ body tilt.** At edges the best foothold depends on the body's tilt, and the tilt depends on the
+   footholds: a foot lands, the body tilts, the best foothold flips back. Standing, each leg now gets one
+   settling step (plus any step that brings an out-of-reach foot into reach, which cannot repeat), and settling
+   swings commit to the foothold chosen at take-off.
+3. **Probe ↔ body tilt.** The forward and down body probes' hit normals depend on the body's own tilt, and at a
+   crease they flip as it tilts, rocking a standing body by degrees per frame. They anticipate walls for a
+   walking body; standing, their weight fades out.
+4. **Landing snaps.** Swing clamps moved the foot to wherever a ray from the hip first met a surface, which
+   near touchdown on a hill was up to 20 cm short; the landing frame snapped it onto the foothold. Feet (and
+   leg tips short of an out-of-reach foothold) are now pushed out of solids along the shortest way out, only
+   when really inside, and a swing whose foothold moved keeps flying to it instead of teleporting.
+
+| standing, 30 stops at 60 Hz, after settling | before | after |
+|---|---|---|
+| stops that never settle | 1 | 0 (all within 2.4 s) |
+| steps while standing | 17 | 0 |
+| fastest joint motion of a planted leg | 74 cm/frame | < 1 mm/frame |
+| foot tip off its foothold | 26 cm | < 1 cm |
+| foot tip inside geometry | 14 cm | < 2 cm |
+
+Walking got smoother too: one-frame pops (a foot tip's motion changing by more than 10 cm between frames)
+fell from 724 to about 140 per minute of wander, and the deepest swinging foot from 18 cm to 2 cm. A tempting
+intermediate version that tracked moving footholds exactly made the body plane follow every flip of the raycast
+target and rolled the spider off an edge in 3 of 40 long runs; the tracking is smooth early in the swing and
+stiffens toward touchdown instead (0 of 40, as before).
+
 ## Failure modes
 
+- Most remaining pops are at the top of the 80 cm-thick climbing wall: a foot wrapped onto the far face is out
+  of reach, and the leg tip alternates between reaching it through the edge and resting on the top. Fixing that
+  needs IK that bends the leg around the edge.
 - Thin features narrower than the probe spacing can be missed or straddled.
 - The forward probe makes wall transitions robust but can also make the body pitch up at small steps.
 - Waypoint steering is disabled on steep surfaces (a waypoint behind a wall would turn the spider back
