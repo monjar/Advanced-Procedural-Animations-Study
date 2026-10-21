@@ -13,7 +13,7 @@ function collectErrors(page: Page): string[] {
 test('gallery lists every study and links the live ones', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('./');
-  for (const d of DEMOS) await expect(page.getByRole('heading', { name: d.title })).toBeVisible();
+  for (const d of DEMOS) await expect(page.getByRole('heading', { name: d.title, exact: true })).toBeVisible();
   const live = DEMOS.filter((d) => d.status === 'live');
   await expect(page.locator('a.card')).toHaveCount(live.length);
   expect(errors).toEqual([]);
