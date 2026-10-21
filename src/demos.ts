@@ -200,7 +200,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Further Studies',
     summary: 'DeepMimic-style: a MuJoCo humanoid trained with PPO to reproduce CMU walk and run clips under physics, and to survive shoves.',
     tags: ['DeepMimic', 'PPO', 'MuJoCo'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '22',
@@ -218,7 +218,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Further Studies',
     summary: 'Witkin & Kass: a jumping lamp whose whole motion is optimised at once so that it obeys physics and saves effort.',
     tags: ['optimisation', 'physics', 'classic'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '24',
@@ -227,7 +227,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Further Studies',
     summary: 'Build a body from parts; it gets a skeleton, a gait and secondary motion automatically, Spore-style.',
     tags: ['procedural', 'gait', 'IK'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '25',
@@ -236,7 +236,7 @@ export const DEMOS: DemoInfo[] = [
     tier: 'Further Studies',
     summary: 'Hands and feet choose holds on a wall, grasp them, and the body follows by IK.',
     tags: ['climbing', 'IK', 'planning'],
-    status: 'planned',
+    status: 'live',
   },
   {
     id: '26',
