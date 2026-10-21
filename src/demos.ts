@@ -180,9 +180,9 @@ export const DEMOS: DemoInfo[] = [
     slug: '19-character-crowds',
     title: 'Character Crowds',
     tier: 'Beyond the Roadmap',
-    summary: 'ORCA velocity-obstacle avoidance steering many procedural walkers through doors and crossings.',
-    tags: ['ORCA', 'crowds', 'avoidance'],
-    status: 'planned',
+    summary: 'ORCA (RVO2 port) vs Helbing social forces steering procedural walkers through swaps, crossings, a door and a corridor.',
+    tags: ['ORCA', 'social forces', 'crowds'],
+    status: 'live',
   },
 ];
 
