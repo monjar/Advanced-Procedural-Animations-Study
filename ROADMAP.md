@@ -18,9 +18,9 @@ technical write-up.
 | 10 | Active Ragdoll                           | Physics       | 02, 08      | live    |
 | 11 | GPU Procedural Crowds                    | Physics / GPU | 01          | live    |
 | 12 | Evolved Virtual Creatures                | Physics       | 10          | live    |
-| 13 | RL Locomotion Policy                     | Learned       | 10          | planned |
-| 14 | LLM-Directed Animation                   | Learned       | 02–07       | planned |
-| 15 | Procedural Face (stretch)                | Expressive    | 01, 02      | planned |
+| 13 | RL Locomotion Policy                     | Learned       | 10          | live    |
+| 14 | LLM-Directed Animation                   | Learned       | 02–07       | live    |
+| 15 | Procedural Face (stretch)                | Expressive    | 01, 02      | live    |
 
 ---
 
@@ -69,6 +69,10 @@ technical write-up.
 - **Techniques:** raycast foot targets; step-distance trigger; tripod gait phase groups; arc-shaped swing
   trajectories; body height and orientation fitted to the foot plane; surface-normal-aligned movement for walls/ceilings.
 - **Done when:** walks across uneven terrain and transitions floor → wall → over the top → floor without foot sliding (unit-tested). Ceilings are not covered.
+- **Standing still (fixed after launch):** stopped near crates, the ramp or the wall, legs stepped forever (footholds out of
+  reach; foothold ↔ body-tilt and probe ↔ body-tilt feedback loops). Now: reach-preferring footholds when idle, a settling
+  budget, probes faded out when standing, continuous push-out instead of snapping clamps. Audited over 30 stops at 30–240 Hz:
+  0 steps after settling (17 before), planted joints < 1 mm/frame (74 cm before); walking pops 724 → ~140 per minute.
 - **References:** J. Jakobsson & J. Primate, *The Rain World Animation Process* (GDC 2016).
 
 ### 06 · Procedural Quadruped
@@ -136,22 +140,36 @@ technical write-up.
 ## Tier 5 — Learned
 
 ### 13 · RL Locomotion Policy
-- **Techniques:** PPO trained offline in `training/` (MuJoCo + Brax or SB3), exported to ONNX; in-browser inference via
-  `onnxruntime-web` stepping `@mujoco/mujoco` WASM — the policy must run in the same simulator it was trained in.
-  Mouse-applied perturbations. Optional DeepMimic-style imitation of a CMU clip.
-- **References:** J. Schulman et al., *PPO* (2017); X. B. Peng et al., *DeepMimic* (SIGGRAPH 2018).
-- **Risk:** highest schedule risk — needs GPU compute outside the browser; MuJoCo JS bindings are still WIP.
+- **Built:** a 12-DoF quadruped (PD actuators) trained with PPO written in PyTorch (`training/`), 57 M steps on a CPU in
+  37 minutes; velocity-command tracking with shoves; runs live in **MuJoCo WASM** (`@mujoco/mujoco`, same version and
+  model as training) with drag, shove, keyboard/gamepad and autopilot.
+- **Measured:** WASM reproduces the Python simulation to 2 × 10⁻¹⁴; the TypeScript MLP matches PyTorch to 3.5 × 10⁻⁷;
+  speed error ≤ 0.05 m/s across commands; 1 fall in 10 × 20 s of 1 m/s shoves every 2 s; emergent trot.
+- **Deviation:** MuJoCo + own PPO instead of Brax/SB3; the actor runs in plain TypeScript, not onnxruntime-web (three
+  matrix products do not justify a ~10 MB runtime). No DeepMimic imitation (optional).
+- **References:** J. Schulman et al., *PPO* (2017); N. Rudin et al., *Learning to Walk in Minutes* (2021).
 
 ### 14 · LLM-Directed Animation
-- **Techniques:** natural language → schema-validated JSON program over the procedural vocabulary from studies 02–07
-  (IK targets, gait parameters, look-at, timing). LLMs are unreliable with raw joint angles, so they drive high-level
-  primitives only. Bring-your-own API key stored in `localStorage` only; recorded responses keep the page usable without a key.
+- **Built:** natural language → a program over walk_to / turn_to / look_at / point_at / reach_for / wave / nod /
+  shake_head / wait with `with_previous` concurrency, performed by the study 07 biped with study 02 IK, a cone-limited
+  look-at and a crouch. Claude (`claude-opus-5-5`) via structured outputs (JSON schema) plus a validator whose
+  messages drive one repair round; bring-your-own key, kept in the browser; example programs work without a key.
+- **Measured:** all 43 steps of the 8 example programs achieve their intent (arrive within 8 cm, point within 0.05°,
+  touch within 11 cm); the client's request shape and repair loop are tested against a fake API.
+- **Deviation:** the keyless examples were written by Claude while building the study, not recorded from the API
+  (no key was available); the page says so.
 - **References:** G. Tevet et al., *Human Motion Diffusion Model* (2022) as the learned text-to-motion contrast.
 
-### 15 · Procedural Face (stretch)
-- **Techniques:** saccades, blinks and micro-movements; Web Audio analysis driving visemes on morph targets.
-- **References:** S. Lee, J. Badler, N. Badler, *Eyes Alive* (SIGGRAPH 2002);
-  K. Ruhland et al., *A Review of Eye Gaze in Virtual Agents* (2015).
+### 15 · Procedural Face
+- **Built:** saccades (main sequence, exponential sizes), conversation gaze (mutual gaze vs aversion), microsaccades and
+  drift, eye–head coordination with VOR, lid–eye coupling, blinks; a formant synthesizer that speaks typed text with a
+  ground-truth viseme timeline; LPC formant tracking → visemes on procedurally generated morph targets, from the voice,
+  a file or the microphone.
+- **Measured:** 89–94 % of saccades ≤ 15°; blinks 17 / 24 per minute (rest / talking); mutual gaze 46 % talking vs 73 %
+  listening; lip-sync on synthesized speech: 87 % vowel frames, 99 % s/sh, 76 % closures shut, jaw r = 0.89 — and a
+  measured 25–35 ms output delay without which vowel accuracy falls to 68 %.
+- **Deviation:** gaze interval distributions are tuned to published proportions, not fitted to Eyes Alive's data.
+- **References:** S. Lee, J. Badler, N. Badler, *Eyes Alive* (SIGGRAPH 2002); K. Ruhland et al. (2015); Peterson & Barney (1952).
 
 ---
 

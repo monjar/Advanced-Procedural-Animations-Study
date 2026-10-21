@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { World } from '../../demos/05-hexapod/world';
 import { Spider, DEFAULT_SETTINGS, FOOT_RADIUS } from '../../demos/05-hexapod/spider';
-import { auditFootholds, auditHexapod } from '../support/hexapodAudit';
+import { auditFootholds, auditHexapod, auditIdle } from '../support/hexapodAudit';
 
 const DT = 1 / 60;
 
@@ -84,7 +84,26 @@ describe('Spider ground contact on the playground (crates, wall, ramp, hills)', 
     expect(a.footFrames / legFrames).toBeLessThan(0.01);
     expect(a.body).toBeLessThan(0.06);
     expect(a.bodyFrames / a.frames).toBeLessThan(0.01);
+    // Visible pops (a foot tip's per-frame motion changing by > 10 cm): 724 before swings stopped snapping
+    // onto moved footholds and the clamps started pushing feet out instead of teleporting them; now ~140,
+    // nearly all at the top of the climbing wall (see the write-up).
+    expect(a.jerks).toBeLessThan(250);
   }, 30000);
+
+  // Before: stopped on a crate edge, on the ramp or on the wall, legs stepped forever at footholds out of
+  // reach or flipped between two footholds as the body tilted; joints jumped up to 74 cm in a frame, feet sat
+  // 26 cm off their footholds and 14 cm inside the geometry, and one stop never settled.
+  // A step that brings an out-of-reach foot back into reach is allowed (and cannot repeat); shaking is not.
+  it.each([60, 144])('stands still once settled, wherever it stops (%s Hz)', (rate) => {
+    const r = auditIdle(30, 2.3, 2, 3, rate);
+    expect(r.settleTime).toBeLessThan(4);
+    expect(r.steps).toBeLessThanOrEqual(2);
+    expect(r.plantedJoint).toBeLessThan(0.005);
+    expect(r.body).toBeLessThan(0.005);
+    expect(r.bodyAngle).toBeLessThan(0.01);
+    expect(r.short).toBeLessThan(0.08);
+    expect(r.depth).toBeLessThan(0.02);
+  }, 60000);
 
   // Regression: an interaction between swing-foot clamping and the body plane once left legs without a
   // foothold for 2.5 s (feet 3 m behind) under jittery frame times. The plane now uses footholds only.

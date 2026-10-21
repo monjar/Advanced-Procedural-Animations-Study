@@ -29,6 +29,8 @@ export default defineConfig({
       input: { main: resolve(root, 'index.html'), ...demoEntries() },
     },
   },
+  // MuJoCo's loader finds its .wasm next to itself (new URL(…, import.meta.url)); pre-bundling would move it.
+  optimizeDeps: { exclude: ['@mujoco/mujoco'] },
   worker: {
     // Module workers (study 12 imports Rapier inside its worker).
     format: 'es',

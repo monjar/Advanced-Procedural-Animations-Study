@@ -1,0 +1,110 @@
+<!--
+  Study 13 quadruped: Go1-like proportions (13 kg, 21 cm thigh and calf), 12 joints driven by PD position (kp 30, kd 0.75)
+  actuators. The same file is loaded by the Python trainer and by MuJoCo WASM in the browser, so the policy runs
+  in the simulator it was trained in.
+
+  Collision groups: robot geoms (contype 2, conaffinity 1) touch the floor (contype 1, conaffinity 2) but not
+  each other.
+-->
+<mujoco model="quadruped">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.005" integrator="implicitfast" iterations="20" ls_iterations="20"/>
+
+  <default>
+    <joint damping="0.05" armature="0.01" frictionloss="0.05"/>
+    <geom contype="2" conaffinity="1" friction="1 0.02 0.01" condim="3"/>
+    <general gaintype="fixed" biastype="affine" gainprm="30" biasprm="0 -30 -0.75"/>
+    <default class="hip">
+      <joint axis="1 0 0" range="-0.8 0.8"/>
+      <general forcerange="-23.7 23.7" ctrlrange="-0.8 0.8"/>
+    </default>
+    <default class="thigh">
+      <joint axis="0 1 0" range="-0.6 2.6"/>
+      <general forcerange="-23.7 23.7" ctrlrange="-0.6 2.6"/>
+    </default>
+    <default class="calf">
+      <joint axis="0 1 0" range="-2.7 -0.8"/>
+      <general forcerange="-35.5 35.5" ctrlrange="-2.7 -0.8"/>
+    </default>
+    <default class="foot">
+      <geom type="sphere" size="0.022" friction="1 0.02 0.01" mass="0.06"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <geom name="floor" type="plane" size="0 0 0.05" contype="1" conaffinity="2"/>
+    <body name="trunk" pos="0 0 0.33">
+      <freejoint name="root"/>
+      <geom name="trunk" type="box" size="0.19 0.095 0.055" mass="6.5"/>
+
+      <!-- FR, FL, RR, RL: hip offsets ±0.19 m forward/back, ±0.05 m sideways. -->
+      <body name="FR_hip" pos="0.19 -0.05 0">
+        <joint name="FR_hip" class="hip"/>
+        <geom type="cylinder" size="0.045 0.025" pos="0 -0.03 0" quat="0.7071 0.7071 0 0" mass="0.6"/>
+        <body name="FR_thigh" pos="0 -0.08 0">
+          <joint name="FR_thigh" class="thigh"/>
+          <geom type="capsule" size="0.024" fromto="0 0 0 0 0 -0.21" mass="1.0"/>
+          <body name="FR_calf" pos="0 0 -0.21">
+            <joint name="FR_calf" class="calf"/>
+            <geom type="capsule" size="0.014" fromto="0 0 0 0 0 -0.19" mass="0.15"/>
+            <geom name="FR_foot" class="foot" pos="0 0 -0.21"/>
+          </body>
+        </body>
+      </body>
+      <body name="FL_hip" pos="0.19 0.05 0">
+        <joint name="FL_hip" class="hip"/>
+        <geom type="cylinder" size="0.045 0.025" pos="0 0.03 0" quat="0.7071 0.7071 0 0" mass="0.6"/>
+        <body name="FL_thigh" pos="0 0.08 0">
+          <joint name="FL_thigh" class="thigh"/>
+          <geom type="capsule" size="0.024" fromto="0 0 0 0 0 -0.21" mass="1.0"/>
+          <body name="FL_calf" pos="0 0 -0.21">
+            <joint name="FL_calf" class="calf"/>
+            <geom type="capsule" size="0.014" fromto="0 0 0 0 0 -0.19" mass="0.15"/>
+            <geom name="FL_foot" class="foot" pos="0 0 -0.21"/>
+          </body>
+        </body>
+      </body>
+      <body name="RR_hip" pos="-0.19 -0.05 0">
+        <joint name="RR_hip" class="hip"/>
+        <geom type="cylinder" size="0.045 0.025" pos="0 -0.03 0" quat="0.7071 0.7071 0 0" mass="0.6"/>
+        <body name="RR_thigh" pos="0 -0.08 0">
+          <joint name="RR_thigh" class="thigh"/>
+          <geom type="capsule" size="0.024" fromto="0 0 0 0 0 -0.21" mass="1.0"/>
+          <body name="RR_calf" pos="0 0 -0.21">
+            <joint name="RR_calf" class="calf"/>
+            <geom type="capsule" size="0.014" fromto="0 0 0 0 0 -0.19" mass="0.15"/>
+            <geom name="RR_foot" class="foot" pos="0 0 -0.21"/>
+          </body>
+        </body>
+      </body>
+      <body name="RL_hip" pos="-0.19 0.05 0">
+        <joint name="RL_hip" class="hip"/>
+        <geom type="cylinder" size="0.045 0.025" pos="0 0.03 0" quat="0.7071 0.7071 0 0" mass="0.6"/>
+        <body name="RL_thigh" pos="0 0.08 0">
+          <joint name="RL_thigh" class="thigh"/>
+          <geom type="capsule" size="0.024" fromto="0 0 0 0 0 -0.21" mass="1.0"/>
+          <body name="RL_calf" pos="0 0 -0.21">
+            <joint name="RL_calf" class="calf"/>
+            <geom type="capsule" size="0.014" fromto="0 0 0 0 0 -0.19" mass="0.15"/>
+            <geom name="RL_foot" class="foot" pos="0 0 -0.21"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <general name="FR_hip" joint="FR_hip" class="hip"/>
+    <general name="FR_thigh" joint="FR_thigh" class="thigh"/>
+    <general name="FR_calf" joint="FR_calf" class="calf"/>
+    <general name="FL_hip" joint="FL_hip" class="hip"/>
+    <general name="FL_thigh" joint="FL_thigh" class="thigh"/>
+    <general name="FL_calf" joint="FL_calf" class="calf"/>
+    <general name="RR_hip" joint="RR_hip" class="hip"/>
+    <general name="RR_thigh" joint="RR_thigh" class="thigh"/>
+    <general name="RR_calf" joint="RR_calf" class="calf"/>
+    <general name="RL_hip" joint="RL_hip" class="hip"/>
+    <general name="RL_thigh" joint="RL_thigh" class="thigh"/>
+    <general name="RL_calf" joint="RL_calf" class="calf"/>
+  </actuator>
+</mujoco>
